@@ -99,7 +99,7 @@ block main
                   td
                     if (item.mimetype.includes("image"))
                       img(
-                        src=`${domainCDN}${item.folder}/${item.filename}`
+                        src=`${domainPublic}${item.folder}/${item.filename}`
                         class="rounded thumb-md me-1 d-inline"
                       )
                     else if (item.mimetype.includes("audio"))

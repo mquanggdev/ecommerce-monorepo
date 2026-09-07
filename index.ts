@@ -62,6 +62,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // Tạo biến toàn cục trong file PUG
 app.locals.pathAdmin = pathAdmin;
 app.locals.domainCDN = domainCDN;
+app.locals.domainPublic = process.env.CDN_PUBLIC || domainCDN;
 // Khởi tạo thư viện lấy cookie
 app.use(cookieParser());
 
