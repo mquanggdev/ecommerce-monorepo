@@ -393,19 +393,19 @@ Mở tab **Actions** trên GitHub, đợi chạy xong. Cả 3 job phải ✅. N�
 
 ## 7. ĐỊNH NGHĨA HOÀN THÀNH
 
-- [ ] Batch 2B đã xong (kiểm tra ở mục 2)
-- [ ] Đã tạo nhánh `fix/3a-xss-chat`
-- [ ] `escapeHtml()` và `safeFilePath()` có mặt ở **cả hai** file `chat.js`
-- [ ] Nội dung tin nhắn được escape ở cả hai file
-- [ ] Đường dẫn file qua `safeFilePath()` ở cả 3 vị trí × 2 file
-- [ ] `_id` và `createdAtFormat` được escape
-- [ ] **Cả 4** chỗ output AI dùng `textContent`
-- [ ] `white-space: pre-wrap` cho hộp nội dung AI
-- [ ] Lỗi `boxContent` ngoài phạm vi đã sửa
-- [ ] Helmet đã cài và đặt đúng vị trí, `contentSecurityPolicy: false`
-- [ ] KC-1 → KC-6 đều đạt, **kết quả thật đã dán vào báo cáo**
-- [ ] Biến `domainCDN` **giữ nguyên**, chưa đổi
-- [ ] Đã commit + push nhánh, **CI xanh**, **chưa merge**
+- [x] Batch 2B đã xong (kiểm tra ở mục 2)
+- [x] Đã tạo nhánh `fix/3a-xss-chat`
+- [x] `escapeHtml()` và `safeFilePath()` có mặt ở **cả hai** file `chat.js`
+- [x] Nội dung tin nhắn được escape ở cả hai file
+- [x] Đường dẫn file qua `safeFilePath()` ở cả 3 vị trí × 2 file
+- [x] `_id` và `createdAtFormat` được escape
+- [x] **Cả 4** chỗ output AI dùng `textContent`
+- [x] `white-space: pre-wrap` cho hộp nội dung AI
+- [x] Lỗi `boxContent` ngoài phạm vi đã sửa
+- [x] Helmet đã cài và đặt đúng vị trí, `contentSecurityPolicy: false`
+- [x] KC-1 → KC-6 đều đạt, **kết quả thật đã dán vào báo cáo**
+- [x] Biến `domainCDN` **giữ nguyên**, chưa đổi
+- [x] Đã commit + push nhánh, **CI xanh**, **chưa merge**
 
 ---
 
@@ -425,4 +425,62 @@ Mở tab **Actions** trên GitHub, đợi chạy xong. Cả 3 job phải ✅. N�
 
 ## KẾT QUẢ THỰC THI
 
-*(CODEX điền phần này sau khi làm xong — xem mẫu ở mục 2.5 của `2-KE-HOACH-TONG-THE.md`)*
+### 1. Thông tin thực thi
+
+| Mục | Kết quả |
+|---|---|
+| Nhánh | `fix/3a-xss-chat` |
+| Commit mã nguồn | `d56983e984612565a9763b429583331190fb0371` |
+| Pull request | [#1 — Batch 3A: Vá stored XSS trong chat và thêm Helmet](https://github.com/mquanggdev/ecommerce-monorepo/pull/1) |
+| CI của commit mã nguồn | [Run 34100397091](https://github.com/mquanggdev/ecommerce-monorepo/actions/runs/34100397091) — **thành công** |
+| Trạng thái merge | Chưa merge vào `main` |
+
+Điều kiện tiên quyết đã đạt: `docker-compose.yml` được Git theo dõi, Batch 2B đã hoàn tất, typecheck ban đầu thành công và nhánh được tạo từ `origin/main` tại commit `1bd65ee823903a3c2be9d5434d0a9ca169a2b6b5`.
+
+### 2. File đã thay đổi
+
+- `project-ecommerce-t8-25/public/admin/assets/js/chat.js`
+- `project-ecommerce-t8-25/public/client/assets/js/chat.js`
+- `project-ecommerce-t8-25/index.ts`
+- `project-ecommerce-t8-25/package.json`
+- `project-ecommerce-t8-25/package-lock.json`
+
+`package-lock.json` là thay đổi tự động bắt buộc đi kèm `npm install helmet`; đây là phần bổ sung cần thiết cho `package.json` dù danh sách phạm vi chỉ ghi rõ manifest. Không sửa controller chat, socket, `main.js`, Pug hoặc biến `domainCDN`.
+
+Thay đổi có sẵn trong `docs/2-KE-HOACH-TONG-THE.md` được giữ nguyên ở working tree và **không được stage/commit** trong Batch 3A.
+
+### 3. Nội dung đã hoàn thành
+
+- Thêm `escapeHtml()` và `safeFilePath()` vào cả hai file chat.
+- Escape nội dung tin nhắn, `_id`, `createdAtFormat` và tên file preview.
+- Chỉ render file bắt đầu bằng `/media/`, chặn `..`, encode từng đoạn path và vẫn giữ nguyên `domainCDN`.
+- Đổi cả bốn output AI từ `innerHTML` sang `textContent`; giữ xuống dòng bằng `white-space: pre-wrap`.
+- Sửa `ReferenceError` của `boxContent` trong handler đóng gợi ý AI.
+- Cài `helmet@8.3.0` và đăng ký middleware ngay sau `const app = express()` với CSP, COEP và CORP tạm tắt đúng yêu cầu tương thích hiện tại.
+
+### 4. Kết quả kiểm chứng KC-1 đến KC-6
+
+| Kiểm chứng | Kết quả thực tế |
+|---|---|
+| KC-1 — TypeScript | `npm run typecheck` thành công, exit code `0`. |
+| Cú pháp JavaScript | `node --check` thành công cho cả hai file chat. |
+| KC-2 — rà `innerHTML` | Không còn `boxContent.innerHTML = data.content`; dữ liệu được đưa vào template đều qua `escapeHtml()` hoặc `safeFilePath()`. |
+| KC-3 — payload XSS | Chromium headless chạy **chính hàm `appendMessage`** của client và admin với hai payload bắt buộc. Cả hai phía trả `DOM_XSS_BLOCKED`, số dialog = `0`, số thuộc tính `onerror`/`onmouseover` sinh ra = `0`, nội dung độc hại hiển thị nguyên văn. |
+| KC-3 — đường dẫn file | `javascript:alert(1)` và `/media/../secret` bị bỏ qua; `/media/x\" onerror=\"alert(1).png` thành `/media/x%22%20onerror%3D%22alert(1).png`. |
+| KC-4 — header | `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security: max-age=31536000; includeSubDomains`, `X-DNS-Prefetch-Control: off`. CSP và CORP không xuất hiện, đúng cấu hình tạm tắt. |
+| KC-5 — trang chủ | HTTP `200`, title `Trang chủ`, không có lỗi Console khi mở bằng `http://localhost:3000/`. |
+| KC-5 — danh mục | HTTP `200`, title `Tất cả sản phẩm`, không có lỗi Console. |
+| KC-5 — hai route admin | Chuyển về `/admin/account/login` và render HTTP `200` đúng hành vi khi chưa có phiên đăng nhập; không có lỗi Console. |
+| KC-6 — CI | Cả ba job `Typecheck project-ecommerce-t8-25`, `Typecheck file-manager` và `Build Docker images` đều thành công. |
+
+Kiểm thử tấn công được tự động hóa trực tiếp trong DOM Chromium thay cho thao tác thủ công bằng hai cửa sổ đăng nhập; nó sử dụng nguyên hàm render trong hai file sản phẩm, không dùng bản sao viết lại. Không ghi payload thử nghiệm vào cơ sở dữ liệu.
+
+### 5. Checklist hoàn thành
+
+- [x] Batch 2B đã xong
+- [x] Tạo và push nhánh `fix/3a-xss-chat`
+- [x] Hoàn thành YC-1 đến YC-7
+- [x] Kiểm tra cú pháp, typecheck, payload XSS, path độc hại, header và các route chính
+- [x] CI xanh đủ ba job
+- [x] Giữ nguyên `domainCDN`
+- [x] Mở PR review và chưa merge vào `main`
