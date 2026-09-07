@@ -1,0 +1,7 @@
+node_modules/
+.env
+.env.docker
+
+# Thư mục nguồn tạm khi gộp repo — xóa sau khi xong
+_src-ecommerce/
+_src-file-manager/
