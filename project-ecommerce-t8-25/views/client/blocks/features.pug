@@ -1,0 +1,23 @@
+//
+  ============================
+    FEATURES START
+    ==============================
+section.features(class="mt_20")
+  .container
+    if blockData && blockData.items && blockData.items.length
+      .row
+        each item in blockData.items
+          .col-xl-3.col-md-6.wow.fadeInUp
+            div(class=`features_item ${item.color || ""}`)
+              .icon
+                img(
+                  alt=item.title
+                  src=item.icon
+                  )
+              .text
+                h3 #{item.title}
+                p #{item.description}
+//
+  ============================
+    FEATURES END
+    ==============================

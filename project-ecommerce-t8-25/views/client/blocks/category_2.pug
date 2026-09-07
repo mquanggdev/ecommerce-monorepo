@@ -1,0 +1,24 @@
+//
+  ============================
+    CATEGORY 2 START
+    ==============================
+section.category(class="category_2 mt_55")
+  .container
+    if blockData.items && blockData.items.length
+      .row(class="category_2_slider")
+        each item in blockData.items
+          .col-2.wow.fadeInUp
+            a(
+              class="category_item" 
+              href=item.link
+              )
+              .img
+                img.img-fluid.w-100(
+                  alt=item.title
+                  src=item.image
+                  )
+              h3 #{item.title}
+//
+  ============================
+    CATEGORY 2 END
+    ==============================

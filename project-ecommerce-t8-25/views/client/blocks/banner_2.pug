@@ -1,0 +1,50 @@
+include ../mixins/menu-category-item.pug
+
+//
+  =========================
+    BANNER 2 START
+    ==========================
+section(class="banner_2")
+  .container
+    .row
+      .col-xl-2.d-none.d-xxl-block
+        if blockData.categories && blockData.categories.enable
+          +renderCategory(categoryProductList, 0)
+      .col-xxl-7.col-lg-8
+        div(class="banner_content")
+          .row(class="banner_2_slider")
+            each slider in blockData.sliders
+              .col-xl-12
+                .wow.fadeInUp(
+                  style=`background: url(${slider.background});`
+                  class="banner_slider_2"
+                  )
+                  div(class="banner_slider_2_text")
+                    h3 #{slider.subtitle}
+                    h1 #{slider.title}
+                    a(
+                      href=slider.button.link
+                      class="common_btn"
+                      )
+                      | #{slider.button.text}
+                      i.fas.fa-long-arrow-right
+      .col-xxl-3.col-lg-4.col-sm-12.col-md-12
+        .row
+          .col-xl-12
+            .wow.fadeInUp(
+              style=`background: url(${blockData.sideBanner.background});`
+              class="banner_2_add"
+              )
+              .text
+                h4 #{blockData.sideBanner.subtitle}
+                h2 #{blockData.sideBanner.title}
+                a(
+                  href=blockData.sideBanner.button.link
+                  class="common_btn"
+                  )
+                  | #{blockData.sideBanner.button.text}
+                  i.fas.fa-long-arrow-right
+//
+  =========================
+    BANNER 2 END
+    ==========================
