@@ -6,6 +6,7 @@ import clientRoutes from "./routes/client/index.route";
 import { domainCDN,pathAdmin } from "./configs/variable.config";
 import { connectDB } from "./configs/database.config";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
 
 import session from "express-session";
 import passport from "passport";
@@ -21,6 +22,18 @@ import { startJobs } from './jobs/index.job';
 dotenv.config();
 
 const app = express();
+
+// Thêm các security header cơ bản
+app.use(helmet({
+  // CSP tạm tắt: hệ thống còn nhiều inline script trong file Pug.
+  // Sẽ bật ở batch riêng sau khi chuyển inline script sang nonce.
+  contentSecurityPolicy: false,
+  // Tắt COEP để không chặn ảnh tải từ file-manager (khác origin)
+  crossOriginEmbedderPolicy: false,
+  // Cho phép trang nhúng ảnh từ origin khác (CDN cổng 4000)
+  crossOriginResourcePolicy: false,
+}));
+
 const port = 3000;
 
 // Khởi tạo SocketIO bên Server
