@@ -520,4 +520,35 @@ Tab Actions → lần chạy mới nhất → cả 3 job (`typecheck (project-ec
 
 ## KẾT QUẢ THỰC THI
 
-*(Điền sau khi làm xong — xem mẫu ở mục 2.5 của `2-KE-HOACH-TONG-THE.md`)*
+- **Trạng thái:** Hoàn thành ngày 07/09/2026.
+- **Nhánh:** `main` — batch nền tạo repository mới, không dùng nhánh riêng theo brief.
+- **Remote mới:** `https://github.com/mquanggdev/ecommerce-monorepo.git`.
+- **Commit triển khai chính:** `1db6518` — `Sửa tsconfig, thêm script typecheck, .env.example và CI`.
+- **File đã sửa hoặc tạo:**
+  - `.gitignore`
+  - `.github/workflows/ci.yml`
+  - `docker-compose.yml` được đưa vào version control
+  - `project-ecommerce-t8-25/tsconfig.json`
+  - `project-ecommerce-t8-25/package.json`
+  - `project-ecommerce-t8-25/.env.example`
+  - `file-manager/package.json`
+  - `file-manager/.env.example`
+  - `docs/2B-MONOREPO-VA-CI.md` — phần báo cáo này
+- **Kết quả kiểm chứng:**
+  - Backup đầy đủ được giữ tại `D:\Middle Nodejs\Node TH-BACKUP-20260907`, gồm hai `.git`, bốn file `.env*` và `docker-compose.yml`.
+  - Hai repository cũ đều được push trước khi gộp và báo `Everything up-to-date`.
+  - Monorepo có 278 commit tại thời điểm commit triển khai; hai HEAD cũ `e12c72d` và `2d97e04` đều được xác nhận là ancestor của monorepo `HEAD`.
+  - Trước khi thêm `.env.example`, tree gộp có đúng 810 file ecommerce và 22 file file-manager, khớp tuyệt đối với hai source repository.
+  - `npm ci` sạch từ lockfile và `npm run typecheck` đều exit code `0` ở cả hai service.
+  - Ecommerce khởi động thành công: log có `Website đang chạy trên cổng 3000` và `Kết nối DB thành công!`.
+  - `GET /` trả HTTP `200`; `GET /admin/dashboard` chuyển về `/admin/account/login` và trả HTTP `200`.
+  - `git ls-files -- docker-compose.yml` trả đúng `docker-compose.yml`; `docker compose config --quiet` thành công.
+  - GitHub Actions run `34092467740` cho commit `1db6518` hoàn thành với kết luận `success`: hai job typecheck và job Docker build đều xanh.
+  - Local `HEAD` và `origin/main` cùng là `1db6518678e6e10abb636aca4c3576973d9856a5` trước commit báo cáo.
+  - Hai thư mục `_src-*` và staging đã được xóa sau khi CI xanh; backup đầy đủ vẫn được giữ nguyên.
+  - Hai repository cũ `mquanggdev/PrjEcormerceT8` và `mquanggdev/File-Manager` đã archive; `mquanggdev/ecommerce-monorepo` vẫn active.
+- **Yêu cầu không làm được đúng nguyên văn brief:** Không thể đổi tên trực tiếp thư mục `project-ecommerce-t8-25` vì task Codex đang mở thư mục đó và Windows khóa handle. Đã dùng phương án staging tương đương: dựng monorepo riêng, đối chiếu Git tree, sau đó kích hoạt metadata tại `Node TH`. Không mất file hay lịch sử.
+- **Phát hiện thêm ngoài phạm vi:**
+  - `git log -- <prefix>` chỉ hiện các commit thêm subtree vì commit lịch sử cũ chưa mang prefix; việc bảo toàn lịch sử được kiểm chứng chính xác hơn bằng `git merge-base --is-ancestor`.
+  - `npm audit` báo 20 vulnerability ở ecommerce và 6 ở file-manager. Không chạy `npm audit fix` vì ngoài phạm vi và có nguy cơ đổi dependency.
+  - Docker build local chờ rất lâu tại bước cài Puppeteer nên đã dừng; cùng Docker build đó trên GitHub Actions đã hoàn thành thành công.
