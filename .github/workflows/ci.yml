@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  typecheck:
+    name: Typecheck ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [ project-ecommerce-t8-25, file-manager ]
+    env:
+      # Chỉ kiểm tra kiểu, không cần Chromium — tiết kiệm thời gian cài đặt
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.service }}/package-lock.json
+
+      - name: Cài dependency
+        run: npm ci
+        working-directory: ${{ matrix.service }}
+
+      - name: Kiểm tra kiểu TypeScript
+        run: npm run typecheck
+        working-directory: ${{ matrix.service }}
+
+  docker-build:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tạo file env rỗng
+        # docker compose cần env_file tồn tại, mà .env.docker bị gitignore
+        run: |
+          touch project-ecommerce-t8-25/.env.docker
+          touch file-manager/.env.docker
+
+      - name: Build
+        run: docker compose build
