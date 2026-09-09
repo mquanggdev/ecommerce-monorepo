@@ -1,3 +1,21 @@
+// Escape ký tự HTML để chống XSS khi nhúng dữ liệu người dùng vào innerHTML
+const escapeHtml = (value) => {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+};
+
+// Chỉ chấp nhận đường dẫn file do file-manager trả về, dạng /media/...
+const safeFilePath = (file) => {
+  const path = String(file ?? "");
+  if (!path.startsWith("/media/")) return null;
+  if (path.includes("..")) return null;
+  return path.split("/").map(encodeURIComponent).join("/");
+};
+
 // Khởi tạo SocketIO bên Client
 const socket = io();
 
@@ -78,28 +96,30 @@ if(chatButton) {
     let html = "";
     // Thêm nút xóa
     if (item.senderRole == "user") {
-      html += `<span class="delete-message" data-id="${item._id}" title="Xóa tin nhắn">✕</span>`;
+      html += `<span class="delete-message" data-id="${escapeHtml(item._id)}" title="Xóa tin nhắn">✕</span>`;
     }
     // Hiển thị content
     if (item.content) {
       html += `
-        <div class="bubble">${item.content}</div>
+        <div class="bubble">${escapeHtml(item.content)}</div>
       `;
     }
     // Hiển thị file
     if (item.files && item.files.length > 0) {
       html += `<div class="message-files">`;
       item.files.forEach(file => {
-        const ext = file.split(".").pop().toLowerCase();
+        const filePath = safeFilePath(file);
+        if (!filePath) return;
+        const ext = filePath.split(".").pop().toLowerCase();
         if (["jpg","jpeg","png","gif","webp"].includes(ext)) {
           html += `
-            <a href="${domainCDN}${file}" target="_blank">
-              <img src="${domainCDN}${file}" class="chat-image">
+            <a href="${domainCDN}${filePath}" target="_blank">
+              <img src="${domainCDN}${filePath}" class="chat-image">
             </a>
           `;
         } else {
           html += `
-            <a href="${domainCDN}${file}" target="_blank">
+            <a href="${domainCDN}${filePath}" target="_blank">
               📄 File đính kèm
             </a>
           `;
@@ -212,7 +232,7 @@ if(chatButton) {
         // Nếu không phải ảnh
         previewItem.innerHTML = `
           <div class="preview-file">
-            📄 ${file.name}
+            📄 ${escapeHtml(file.name)}
           </div>
           <div class="preview-remove">×</div>
         `;

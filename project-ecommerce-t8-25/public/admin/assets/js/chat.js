@@ -1,3 +1,27 @@
+// Escape ký tự HTML để chống XSS khi nhúng dữ liệu người dùng vào innerHTML
+const escapeHtml = (value) => {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+};
+
+// Chỉ chấp nhận đường dẫn file do file-manager trả về, dạng /media/...
+const safeFilePath = (file) => {
+  const path = String(file ?? "");
+  if (!path.startsWith("/media/")) return null;
+  if (path.includes("..")) return null;
+  return path.split("/").map(encodeURIComponent).join("/");
+};
+
+// Output AI hiển thị dạng văn bản thuần, giữ nguyên xuống dòng
+const aiContentBox = document.querySelector("#chat-ai-suggest-reply .inner-content");
+if (aiContentBox) {
+  aiContentBox.style.whiteSpace = "pre-wrap";
+}
+
 // Logic nhắn tin của Admin
 const formChat = document.querySelector("[form-chat]");
 if(formChat) {
@@ -64,28 +88,30 @@ if(formChat) {
     let html = "";
     // Thêm nút xóa
     if (item.senderRole == "admin") {
-      html += `<span class="delete-message" data-id="${item._id}" title="Xóa tin nhắn">✕</span>`;
+      html += `<span class="delete-message" data-id="${escapeHtml(item._id)}" title="Xóa tin nhắn">✕</span>`;
     }
     // Hiển thị content
     if (item.content) {
       html += `
-        <p>${item.content}</p>
+        <p>${escapeHtml(item.content)}</p>
       `;
     }
     // Hiển thị files
     if (item.files && item.files.length > 0) {
       html += `<div class="chat-files">`;
       item.files.forEach(file => {
-        const ext = file.split(".").pop().toLowerCase();
+        const filePath = safeFilePath(file);
+        if (!filePath) return;
+        const ext = filePath.split(".").pop().toLowerCase();
         if (["jpg","jpeg","png","gif","webp"].includes(ext)) {
           html += `
-            <a href="${domainCDN}${file}" target="_blank">
-              <img src="${domainCDN}${file}" class="chat-image">
+            <a href="${domainCDN}${filePath}" target="_blank">
+              <img src="${domainCDN}${filePath}" class="chat-image">
             </a>
           `;
         } else {
           html += `
-            <a href="${domainCDN}${file}" target="_blank">
+            <a href="${domainCDN}${filePath}" target="_blank">
               📄 File đính kèm
             </a>
           `;
@@ -95,7 +121,7 @@ if(formChat) {
     }
     elementMessage.innerHTML = `
       <div class="chat-box w-100 ${item.senderRole === 'admin' ? 'reverse' : ''}">
-        <div class="user-chat" title="${item.createdAtFormat}">
+        <div class="user-chat" title="${escapeHtml(item.createdAtFormat)}">
           ${html}
         </div>
       </div>
@@ -236,7 +262,7 @@ if(formChat) {
         // Nếu không phải ảnh
         previewItem.innerHTML = `
           <div class="preview-file-item">
-            📄 ${file.name}
+            📄 ${escapeHtml(file.name)}
           </div>
           <div class="preview-remove">×</div>
         `;
@@ -337,7 +363,7 @@ if(formChat) {
       const data = await res.json();
       if(data.code === "success") {
         const boxContent = chatAiSuggestReply.querySelector(".inner-content");
-        boxContent.innerHTML = data.content;
+        boxContent.textContent = data.content;
         chatAiSuggestReply.classList.remove("d-none");
       }
     });
@@ -347,7 +373,8 @@ if(formChat) {
   const buttonCloseAiSuggestReply = chatAiSuggestReply.querySelector(".inner-close");
   buttonCloseAiSuggestReply.addEventListener("click", () => {
     chatAiSuggestReply.classList.add("d-none");
-    boxContent.innerHTML = "";
+    const boxContent = chatAiSuggestReply.querySelector(".inner-content");
+    if (boxContent) boxContent.textContent = "";
   });
 
   
@@ -369,7 +396,7 @@ if(formChat) {
 
       if(data.code === "success") {
         const boxContent = chatAiSuggestReply.querySelector(".inner-content");
-        boxContent.innerHTML = data.content;
+        boxContent.textContent = data.content;
         chatAiSuggestReply.classList.remove("d-none");
       }
     });
@@ -384,7 +411,7 @@ if(formChat) {
 
       if(data.code === "success") {
         const boxContent = chatAiSuggestReply.querySelector(".inner-content");
-        boxContent.innerHTML = data.content;
+        boxContent.textContent = data.content;
         chatAiSuggestReply.classList.remove("d-none");
       }
     });
@@ -399,7 +426,7 @@ if(formChat) {
 
       if(data.code === "success") {
         const boxContent = chatAiSuggestReply.querySelector(".inner-content");
-        boxContent.innerHTML = data.content;
+        boxContent.textContent = data.content;
         chatAiSuggestReply.classList.remove("d-none");
       }
     });
