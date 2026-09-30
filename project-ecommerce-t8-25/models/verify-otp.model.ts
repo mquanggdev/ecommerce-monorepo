@@ -4,6 +4,10 @@ import mongoose from "mongoose";
 const schema = new mongoose.Schema({
   email: String,
   otp: String,
+  attempts: { // Số lần đã nhập mã (chống dò mã)
+    type: Number,
+    default: 0
+  },
   type: {
     type: String,
     enum: ["otp-password", "otp-register"], // otp-password – Lấy lại mật khẩu, otp-register: Xác thực đăng ký tài khoản

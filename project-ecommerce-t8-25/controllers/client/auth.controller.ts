@@ -3,7 +3,7 @@ import AccountUser from "../../models/account-user.model";
 import bcrypt from "bcryptjs";
 import slugify from "slugify";
 import jwt from "jsonwebtoken";
-import { generateRandomNumber } from "../../helpers/generate.helper";
+import crypto from "crypto";
 import VerifyOTP from "../../models/verify-otp.model";
 import { sendMail } from "../../helpers/mail.helper";
 
@@ -229,7 +229,7 @@ export const forgotPasswordPost = async (req: Request, res: Response) => {
     }
 
     // Tạo mã OTP
-    const otp = generateRandomNumber(4);
+    const otp = crypto.randomInt(0, 1000000).toString().padStart(6, "0"); // 6 chữ số, sinh bằng bộ sinh số ngẫu nhiên an toàn
 
     // Kiểm tra email đã tồn tại trong VerifyOTP chưa
     const existVerifyOTP = await VerifyOTP.findOne({
@@ -299,19 +299,36 @@ export const otpPasswordPost = async (req: Request, res: Response) => {
       return;
     }
 
-    const existVerifyOTP = await VerifyOTP.findOne({
+    // Mỗi lần nhập tính là một lần thử. Quá 5 lần thì mã bị khóa cho tới khi hết hạn.
+    // Tăng bộ đếm bằng một lệnh update có điều kiện để nhiều request cùng lúc không vượt được giới hạn.
+    const verifyOTP = await VerifyOTP.findOneAndUpdate({
       email: email,
-      otp: otp,
-      type: "otp-password"
-    })
+      type: "otp-password",
+      attempts: { $lt: 5 }
+    }, {
+      $inc: { attempts: 1 }
+    });
 
-    if(!existVerifyOTP) {
+    if(!verifyOTP) {
+      res.json({
+        code: "error",
+        message: "Mã OTP đã hết hạn hoặc bạn đã nhập sai quá 5 lần. Vui lòng yêu cầu mã mới!"
+      })
+      return;
+    }
+
+    if(verifyOTP.otp !== `${otp}`) {
       res.json({
         code: "error",
         message: "Mã OTP không đúng!"
       })
       return;
     }
+
+    // Mã chỉ dùng được một lần
+    await VerifyOTP.deleteOne({
+      _id: verifyOTP.id
+    });
 
     const tokenUser = jwt.sign(
       {

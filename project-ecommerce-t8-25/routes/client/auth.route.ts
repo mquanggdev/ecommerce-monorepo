@@ -4,6 +4,7 @@ import * as authController from "../../controllers/client/auth.controller";
 import * as authValidate from "../../validates/client/auth.validate";
 import passport from "passport";
 import * as authMiddleware from "../../middlewares/client/auth.middleware";
+import { forgotPasswordLimiter, loginLimiter, otpLimiter } from "../../middlewares/rate-limit.middleware";
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.get('/login', authController.login);
 
 router.post(
   '/login', 
+  loginLimiter, 
   authValidate.loginPost, 
   authController.loginPost
 );
@@ -46,6 +48,7 @@ router.get('/forgot-password', authController.forgotPassword);
 
 router.post(
   '/forgot-password', 
+  forgotPasswordLimiter, 
   authValidate.forgotPasswordPost, 
   authController.forgotPasswordPost
 );
@@ -54,6 +57,7 @@ router.get('/otp-password', authController.otpPassword);
 
 router.post(
   '/otp-password', 
+  otpLimiter, 
   authValidate.otpPasswordPost, 
   authController.otpPasswordPost
 );
