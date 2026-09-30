@@ -136,6 +136,7 @@ export const createPost = async (req: Request, res: Response) => {
 
   // Trường discount
   dataFinal.discount = 0;
+  let couponId = ""; // Mã giảm giá sẽ được giữ lượt dùng ở bước sau
   if(req.body.coupon) {
     const couponDetail: any = await Coupon.findOne({
       code: req.body.coupon.trim(),
@@ -194,15 +195,10 @@ export const createPost = async (req: Request, res: Response) => {
         dataFinal.discount = couponDetail.value;
       }
 
-      // TODO 3E: usedCount đang tăng trước khi trừ kho và lưu đơn, nếu bước sau lỗi thì mã bị tiêu oan
-      // Cập nhật lại số lượng đã dùng
-      await Coupon.updateOne({
-        _id: couponDetail.id,
-        deleted: false,
-        status: "active"
-      }, {
-        usedCount: couponDetail.usedCount + 1
-      })
+      // Số tiền giảm không vượt quá tạm tính
+      dataFinal.discount = Math.min(dataFinal.discount, dataFinal.subTotal);
+
+      couponId = couponDetail.id;
     } else {
       // Nếu chưa đủ điều kiện áp dụng mã
       res.json({
@@ -236,8 +232,31 @@ export const createPost = async (req: Request, res: Response) => {
   }
   // Hết Trừ kho
 
-  // Từ đây nếu có lỗi (GoShip, lưu đơn...) thì phải hoàn lại kho đã trừ
+  // Từ đây nếu có lỗi (GoShip, lưu đơn...) thì phải hoàn lại kho, lượt dùng mã giảm giá và điểm đã giữ
+  let couponClaimed = false;
+  let pointClaimed = 0;
+  let errorMessage = "Không thể tạo đơn hàng, vui lòng thử lại!";
   try {
+    // Giữ một lượt dùng mã giảm giá (nguyên tử: hai đơn cùng lúc không thể vượt usageLimit)
+    if(couponId) {
+      const couponResult = await Coupon.updateOne({
+        _id: couponId,
+        deleted: false,
+        status: "active",
+        $or: [
+          { usageLimit: { $in: [null, 0] } }, // Không giới hạn số lần dùng
+          { $expr: { $lt: ["$usedCount", "$usageLimit"] } }
+        ]
+      }, {
+        $inc: { usedCount: 1 }
+      });
+      if(couponResult.modifiedCount !== 1) {
+        errorMessage = "Mã giảm giá đã hết!";
+        throw new Error(errorMessage);
+      }
+      couponClaimed = true;
+    }
+
     // Trường shippingMethod
     // Tọa độ của người gửi
     const shopLocation = {
@@ -302,35 +321,50 @@ export const createPost = async (req: Request, res: Response) => {
     };
 
     // Trường usedPoint và pointDiscount
+    // Dùng điểm hiện có nhưng không vượt quá số tiền còn phải trả, để total không bị âm
+    const amountBeforePoint = dataFinal.subTotal + dataFinal.shipping.fee - dataFinal.discount;
     dataFinal.usedPoint = 0;
     dataFinal.pointDiscount = 0;
     if(res.locals.accountUser) {
-      dataFinal.usedPoint = res.locals.accountUser.totalPoint - res.locals.accountUser.usedPoint;
+      const canUsePoint = Math.max(0, res.locals.accountUser.totalPoint - res.locals.accountUser.usedPoint);
+      dataFinal.usedPoint = Math.min(canUsePoint, Math.floor(amountBeforePoint / pointConfig.POINT_TO_MONEY));
       dataFinal.pointDiscount = dataFinal.usedPoint * pointConfig.POINT_TO_MONEY;
     }
 
+    // Trừ điểm của người dùng (nguyên tử: chỉ trừ khi thực sự còn đủ điểm)
+    if(dataFinal.usedPoint > 0) {
+      const pointResult = await AccountUser.updateOne({
+        _id: res.locals.accountUser.id,
+        $expr: { $gte: [{ $subtract: ["$totalPoint", "$usedPoint"] }, dataFinal.usedPoint] }
+      }, {
+        $inc: { usedPoint: dataFinal.usedPoint }
+      });
+      if(pointResult.modifiedCount !== 1) {
+        errorMessage = "Số điểm của bạn đã thay đổi, vui lòng thử lại!";
+        throw new Error(errorMessage);
+      }
+      pointClaimed = dataFinal.usedPoint;
+    }
+
     // Trường total
-    dataFinal.total = dataFinal.subTotal + dataFinal.shipping.fee - dataFinal.discount - dataFinal.pointDiscount;
+    dataFinal.total = Math.max(0, amountBeforePoint - dataFinal.pointDiscount);
 
     // Lưu dữ liệu vào CSDL
     const newRecord = new Order(dataFinal);
     await newRecord.save();
-
-    // Cập nhật lại số điểm của người dùng
-    if(res.locals.accountUser) {
-      await AccountUser.updateOne({
-        _id: res.locals.accountUser.id
-      }, {
-        usedPoint: res.locals.accountUser.totalPoint
-      });
-    }
-    // Hết Cập nhật lại số điểm của người dùng
   } catch (error: any) {
     console.error("Tạo đơn hàng thất bại:", error?.message);
     await restoreStock();
+    // Trả lại lượt dùng mã giảm giá và điểm đã giữ
+    if(couponClaimed) {
+      await Coupon.updateOne({ _id: couponId }, { $inc: { usedCount: -1 } });
+    }
+    if(pointClaimed > 0) {
+      await AccountUser.updateOne({ _id: res.locals.accountUser.id }, { $inc: { usedPoint: -pointClaimed } });
+    }
     res.json({
       code: "error",
-      message: "Không thể tạo đơn hàng, vui lòng thử lại!"
+      message: errorMessage
     });
     return;
   }

@@ -680,10 +680,13 @@ const drawCart = () => {
 
           let pointDiscount = 0;
           if(data.point && data.point.canUsePoint) {
-            pointDiscount = data.point.canUsePoint * data.point.POINT_TO_MONEY;
+            // Điểm dùng không vượt quá số tiền còn phải trả (khớp với cách tính ở server)
+            const amountBeforePoint = Math.max(0, subTotal + shippingFee - discount);
+            const usedPoint = Math.min(data.point.canUsePoint, Math.floor(amountBeforePoint / data.point.POINT_TO_MONEY));
+            pointDiscount = usedPoint * data.point.POINT_TO_MONEY;
           }
 
-          let total = subTotal + shippingFee - discount - pointDiscount;
+          let total = Math.max(0, subTotal + shippingFee - discount - pointDiscount);
 
           const ulMiniCart = miniCart.querySelector(".offcanvas-body ul");
           ulMiniCart.innerHTML = htmlMiniCart;
