@@ -81,6 +81,15 @@ export const checkPermission = (permission: string) => {
     if(res.locals.permissions.includes(permission)) {
       next();
     } else {
+      // Người dùng mở trang bằng trình duyệt → hiện trang 403. Lời gọi API (fetch) → trả JSON như cũ.
+      const isPageRequest = req.method === "GET" && `${req.headers.accept || ""}`.includes("text/html");
+      if(isPageRequest) {
+        res.status(403).render("errors/403", {
+          homeUrl: `/${pathAdmin}/dashboard`
+        });
+        return;
+      }
+
       res.json({
         code: "error",
         message: "Không đủ quyền!"
