@@ -11,7 +11,7 @@ import hmacSHA256 from 'crypto-js/hmac-sha256';
 import { renderFile } from 'pug';
 import puppeteer from 'puppeteer';
 import fs from "fs";
-import { addPointAfterPayment } from '../../helpers/point.helper';
+import { addPointAfterPayment, confirmOrderPaid } from '../../helpers/point.helper';
 import { pointConfig } from '../../configs/variable.config';
 import AccountUser from '../../models/account-user.model';
 import { getApiPayment, getApiShipping, getGeneral } from '../../configs/setting.config';
@@ -315,6 +315,12 @@ export const paymentZaloPay = async (req: Request, res: Response) => {
     return;
   }
 
+  // Đơn đã thanh toán thì không tạo link thanh toán mới
+  if(orderDetail.paymentStatus === "paid") {
+    res.redirect(`/order/success?orderCode=${orderCode}&phone=${phone}`);
+    return;
+  }
+
   const apiPayment = await getApiPayment();
 
   const config = {
@@ -381,21 +387,39 @@ export const paymentZalopayResult = async (req: Request, res: Response) => {
       let dataJson = JSON.parse(dataStr);
 
       // Cập nhật trạng thái đơn hàng
-      const [phone, orderCode] = dataJson.app_user.split("-");
-      await Order.updateOne({
+      const [phone, orderCode] = `${dataJson.app_user}`.split("-");
+      const orderDetail = await Order.findOne({
         phone: phone,
         code: orderCode,
         deleted: false
-      }, {
-        paymentStatus: "paid"
       });
 
-      // Tích điểm
-      await addPointAfterPayment(orderCode);
-      // Hết Tích điểm
+      if(!orderDetail) {
+        result.return_code = -1;
+        result.return_message = "order not found";
+      } else if(Number(dataJson.amount) !== orderDetail.total) {
+        // Số tiền cổng thanh toán xác nhận không khớp với đơn hàng
+        result.return_code = -1;
+        result.return_message = "amount mismatch";
+      } else {
+        // Chỉ lần gọi đầu tiên mới đổi được trạng thái
+        const isConfirmed = await confirmOrderPaid(orderCode, phone, {
+          provider: "zalopay",
+          transactionId: `${dataJson.zp_trans_id}`,
+          responseCode: "1",
+          amount: Number(dataJson.amount)
+        });
 
-      result.return_code = 1;
-      result.return_message = "success";
+        // Tích điểm
+        if(isConfirmed) {
+          await addPointAfterPayment(orderCode);
+        }
+        // Hết Tích điểm
+
+        // Callback lặp vẫn trả success để ZaloPay ngừng gọi lại
+        result.return_code = 1;
+        result.return_message = "success";
+      }
     }
   } catch (ex: any) {
     result.return_code = 0; // ZaloPay server sẽ callback lại (tối đa 3 lần)
@@ -417,6 +441,12 @@ export const paymentVNPay = async (req: Request, res: Response) => {
 
   if(!orderDetail) {
     res.redirect("/");
+    return;
+  }
+
+  // Đơn đã thanh toán thì không tạo link thanh toán mới
+  if(orderDetail.paymentStatus === "paid") {
+    res.redirect(`/order/success?orderCode=${orderCode}&phone=${phone}`);
     return;
   }
 
@@ -463,7 +493,7 @@ export const paymentVNPay = async (req: Request, res: Response) => {
   let signData = querystring.stringify(vnp_Params, { encode: false });
   let crypto = require("crypto");     
   let hmac = crypto.createHmac("sha512", secretKey);
-  let signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex"); 
+  let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex"); 
   vnp_Params['vnp_SecureHash'] = signed;
   vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
 
@@ -471,6 +501,22 @@ export const paymentVNPay = async (req: Request, res: Response) => {
 }
 
 export const paymentVNPayResult = async (req: Request, res: Response) => {
+  // Lấy các giá trị gốc trước khi sortObject mã hóa lại
+  const txnRef = `${req.query['vnp_TxnRef'] || ""}`;
+  const responseCode = `${req.query['vnp_ResponseCode'] || ""}`;
+  const transactionStatus = `${req.query['vnp_TransactionStatus'] || ""}`;
+  const transactionNo = `${req.query['vnp_TransactionNo'] || ""}`;
+  const amountVNPay = Number(req.query['vnp_Amount']);
+  const [ phone, orderCode ] = txnRef.split('-');
+
+  const renderFailed = (message: string, code?: string) => {
+    res.render("client/pages/order-payment-failed", {
+      pageTitle: "Thanh toán không thành công",
+      message: message,
+      orderCode: code
+    });
+  }
+
   let vnp_Params = req.query;
 
   let secureHash = vnp_Params['vnp_SecureHash'];
@@ -486,30 +532,56 @@ export const paymentVNPayResult = async (req: Request, res: Response) => {
 
   let querystring = require('qs');
   let signData = querystring.stringify(vnp_Params, { encode: false });
-  let crypto = require("crypto");     
+  let crypto = require("crypto");
   let hmac = crypto.createHmac("sha512", secretKey);
-  let signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex");     
+  let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
 
-  if(secureHash === signed){
-    const [ phone, orderCode ] = (vnp_Params['vnp_TxnRef'] as string).split('-');
-    await Order.findOneAndUpdate({
-      phone: phone,
-      code: orderCode,
-      deleted: false
-    }, {
-      paymentStatus: 'paid'
-    })
-
-    // Tích điểm
-    await addPointAfterPayment(orderCode);
-    // Hết Tích điểm
-
-    const settingGeneral = await getGeneral();
-
-    res.redirect(`${settingGeneral.domainWebsite}/order/success?orderCode=${orderCode}&phone=${phone}`);
-  } else{
-    res.render('success', {code: '97'})
+  // Chữ ký không hợp lệ
+  if(secureHash !== signed) {
+    renderFailed("Thông tin giao dịch không hợp lệ.");
+    return;
   }
+
+  const orderDetail = await Order.findOne({
+    phone: phone,
+    code: orderCode,
+    deleted: false
+  });
+
+  if(!orderDetail) {
+    renderFailed("Không tìm thấy đơn hàng.");
+    return;
+  }
+
+  // Giao dịch thất bại hoặc bị hủy vẫn được VNPay ký, nên phải kiểm mã kết quả
+  if(responseCode !== "00" || transactionStatus !== "00") {
+    renderFailed("Giao dịch chưa được thanh toán hoặc đã bị hủy.", orderCode);
+    return;
+  }
+
+  // Số tiền VNPay xác nhận phải khớp với đơn hàng
+  if(amountVNPay !== Math.round((orderDetail.total || 0) * 100)) {
+    renderFailed("Số tiền thanh toán không khớp với đơn hàng.", orderCode);
+    return;
+  }
+
+  // Chỉ lần gọi đầu tiên mới đổi được trạng thái (khách tải lại trang sẽ trả về false)
+  const isConfirmed = await confirmOrderPaid(orderCode, phone, {
+    provider: "vnpay",
+    transactionId: transactionNo,
+    responseCode: responseCode,
+    amount: amountVNPay / 100
+  });
+
+  // Tích điểm
+  if(isConfirmed) {
+    await addPointAfterPayment(orderCode);
+  }
+  // Hết Tích điểm
+
+  const settingGeneral = await getGeneral();
+
+  res.redirect(`${settingGeneral.domainWebsite}/order/success?orderCode=${orderCode}&phone=${phone}`);
 }
 
 export const exportPdf = async (req: Request, res: Response) => {

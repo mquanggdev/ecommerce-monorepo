@@ -1,0 +1,32 @@
+extends ../layouts/default.pug
+
+block main
+  //
+    ============================
+    PAYMENT FAILED START
+    =============================
+  section(class="payment_success mt_100 mb_100")
+    .container
+      .row.justify-content-center
+        .col-xl-6.col-md-10.col-lg-8.col-xxl-5.wow.fadeInUp
+          div(class="payment_success_text")
+            h3 Thanh toán không thành công
+            p #{message}
+            if orderCode
+              p
+                | Mã đơn hàng của bạn là <b>#{orderCode}</b>. Đơn hàng vẫn được giữ, bạn có thể thanh toán lại.
+            .d-flex.flex-wrap.align-items-center.justify-content-center.gap-3
+              a(
+                class="common_btn go_btn"
+                href="/"
+                ) Về trang chủ
+              a(
+                class="common_btn"
+                href="/dashboard/order/list"
+                )
+                | Đơn hàng của tôi
+                i.fas.fa-long-arrow-right
+  //
+    ============================
+    PAYMENT FAILED END
+    =============================

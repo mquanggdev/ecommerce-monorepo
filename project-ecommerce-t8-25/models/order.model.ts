@@ -69,6 +69,15 @@ const schema = new mongoose.Schema(
       type: Number,
       default: 0 // số tiền được trừ từ điểm
     },
+    paidAt: Date, // Thời điểm xác nhận thanh toán
+    pointsAwardedAt: Date, // Thời điểm đã cộng điểm thưởng (dùng để chặn cộng lặp)
+    payment: { // Thông tin giao dịch từ cổng thanh toán
+      provider: String, // "vnpay" | "zalopay"
+      transactionId: String, // Mã giao dịch phía cổng thanh toán
+      responseCode: String, // Mã kết quả cổng trả về
+      amount: Number, // Số tiền cổng xác nhận
+      confirmedAt: Date
+    },
     deleted: {
       type: Boolean,
       default: false
