@@ -347,6 +347,24 @@ export const otpPasswordPost = async (req: Request, res: Response) => {
       sameSite: "strict"
     });
 
+    // Token ngắn hạn chứng minh người dùng vừa xác thực OTP, chỉ dùng để đặt lại mật khẩu
+    const tokenResetPassword = jwt.sign(
+      {
+        id: existAccount.id,
+        purpose: "reset-password"
+      },
+      `${process.env.JWT_SECRET}`,
+      {
+        expiresIn: "10m"
+      }
+    );
+
+    res.cookie("tokenResetPassword", tokenResetPassword, {
+      httpOnly: true,
+      maxAge: 10 * 60 * 1000, // 10 phút
+      sameSite: "strict"
+    });
+
     res.json({
       code: "success",
       message: "Xác thực mã OTP thành công. Vui lòng đổi mật khẩu mới!"
@@ -369,8 +387,41 @@ export const resetPassword = async (req: Request, res: Response) => {
 
 export const resetPasswordPost = async (req: Request, res: Response) => {
   try {
-    const { password } = req.body;
+    const { password, currentPassword } = req.body;
     const userId = res.locals.accountUser.id;
+
+    // Chỉ cho đổi mật khẩu khi: vừa xác thực OTP (có tokenResetPassword hợp lệ) HOẶC nhập đúng mật khẩu hiện tại
+    let verifiedByOTP = false;
+    try {
+      const decoded = jwt.verify(req.cookies.tokenResetPassword, `${process.env.JWT_SECRET}`) as jwt.JwtPayload;
+      verifiedByOTP = decoded.purpose === "reset-password" && decoded.id === userId;
+    } catch (error) {
+      verifiedByOTP = false;
+    }
+
+    if(!verifiedByOTP) {
+      const account = await AccountUser.findOne({
+        _id: userId,
+        deleted: false
+      });
+
+      if(!account || !account.password) {
+        res.json({
+          code: "error",
+          message: "Tài khoản chưa có mật khẩu. Vui lòng dùng chức năng Quên mật khẩu để đặt mật khẩu!"
+        });
+        return;
+      }
+
+      const isMatch = await bcrypt.compare(`${currentPassword || ""}`, `${account.password}`);
+      if(!isMatch) {
+        res.json({
+          code: "error",
+          message: "Mật khẩu hiện tại không đúng!"
+        });
+        return;
+      }
+    }
 
     const hashPassword = await bcrypt.hash(password, 10);
 
@@ -379,6 +430,9 @@ export const resetPasswordPost = async (req: Request, res: Response) => {
     }, {
       password: hashPassword
     })
+
+    // Token đặt lại mật khẩu chỉ dùng được một lần
+    res.clearCookie("tokenResetPassword");
 
     res.json({
       code: "success",

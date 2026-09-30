@@ -1919,6 +1919,11 @@ if(resetPasswordForm) {
         password: password,
       };
 
+      // Trang đổi mật khẩu trong tài khoản có thêm ô mật khẩu hiện tại
+      if(event.target.currentPassword) {
+        dataFinal.currentPassword = event.target.currentPassword.value;
+      }
+
       fetch(`/auth/reset-password`, {
         method: "POST",
         headers: {

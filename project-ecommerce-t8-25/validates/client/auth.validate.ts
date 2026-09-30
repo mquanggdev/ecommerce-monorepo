@@ -170,6 +170,7 @@ export const otpPasswordPost = (req: Request, res: Response, next: NextFunction)
 
 export const resetPasswordPost = (req: Request, res: Response, next: NextFunction) => {
   const schema = Joi.object({
+    currentPassword: Joi.string().allow(""), // Chỉ có khi đổi mật khẩu trong trang tài khoản
     password: Joi.string()
       .min(8)
       .custom((value, helpers) => {
