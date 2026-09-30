@@ -39,7 +39,7 @@
     "jsonwebtoken": "^9.0.3",
     "moment": "^2.30.1",
     "mongodb": "^7.1.0",
-    "mongoose": "^9.2.4",
+    "mongoose": "9.2.4",
     "multer": "^2.1.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.4",
@@ -48,7 +48,7 @@
     "passport-facebook": "^3.0.0",
     "passport-google-oauth20": "^2.0.0",
     "pug": "^3.0.3",
-    "puppeteer": "^24.40.0",
+    "puppeteer": "24.40.0",
     "slugify": "^1.6.6",
     "socket.io": "^4.8.3"
   },
