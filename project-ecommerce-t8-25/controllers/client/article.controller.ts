@@ -14,7 +14,7 @@ export const articleByCategory = async (req: Request, res: Response) => {
     });
 
     if (!categoryDetail) {
-      res.redirect("/");
+      res.status(404).render("errors/404");
       return;
     }
     const find: {
@@ -100,7 +100,7 @@ export const detail = async (req: Request, res: Response) => {
   })
   
   if(!articleDetail) {
-    res.redirect("/");
+    res.status(404).render("errors/404");
     return;
   }
 
@@ -144,7 +144,7 @@ export const detail = async (req: Request, res: Response) => {
 
 
   if(!articleDetail) {
-    res.redirect("/");
+    res.status(404).render("errors/404");
     return;
   }
 

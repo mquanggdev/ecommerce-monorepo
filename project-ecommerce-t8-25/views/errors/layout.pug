@@ -1,0 +1,66 @@
+//- Khung chung cho các trang lỗi (403, 404).
+//- Dùng cho cả admin và client nên tự chứa CSS, không phụ thuộc layout nào.
+//- Màu và font lấy theo giao diện cửa hàng (public/client/assets/css/style.css).
+block variables
+doctype html
+html(lang="vi")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    meta(name="robots" content="noindex")
+    title #{code} - #{title}
+    link(rel="preconnect" href="https://fonts.googleapis.com")
+    link(
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Libertinus+Sans:wght@400;700&family=Roboto:wght@400;500&display=swap"
+    )
+    style.
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: #edf5ff;
+        font-family: "Roboto", sans-serif;
+        color: #7d7b7b;
+        text-align: center;
+      }
+      .box { max-width: 520px; }
+      .code {
+        font-family: "Libertinus Sans", serif;
+        font-size: clamp(96px, 22vw, 180px);
+        font-weight: 700;
+        line-height: 1;
+        color: #0A69D8;
+      }
+      h1 {
+        font-family: "Libertinus Sans", serif;
+        font-size: 28px;
+        color: #333333;
+        margin: 8px 0 12px;
+      }
+      p { font-size: 16px; line-height: 1.6; margin-bottom: 28px; }
+      .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+      a {
+        display: inline-block;
+        padding: 12px 28px;
+        border-radius: 30px;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid #0A69D8;
+        transition: background .2s, color .2s;
+      }
+      a.primary { background: #0A69D8; color: #ffffff; }
+      a.primary:hover { background: #ffa500; border-color: #ffa500; }
+      a.ghost { color: #0A69D8; background: transparent; }
+      a.ghost:hover { background: #0A69D8; color: #ffffff; }
+  body
+    .box
+      .code= code
+      h1= title
+      p= message || defaultMessage
+      .actions
+        a.ghost(href="javascript:history.back()") Quay lại
+        a.primary(href=(homeUrl || "/")) Về trang chủ
