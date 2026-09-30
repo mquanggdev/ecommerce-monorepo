@@ -7,6 +7,8 @@
     "start": "node -r ts-node/register index.ts",
     "dev": "nodemon --exec \"node --inspect -r ts-node/register\" index.ts",
     "typecheck": "tsc --noEmit",
+    "seed": "node -r ts-node/register scripts/seed/seed.ts",
+    "seed:images": "node -r ts-node/register scripts/seed/download-images.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
