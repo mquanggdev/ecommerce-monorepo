@@ -15,7 +15,7 @@ mixin renderCategory(items, level = 0)
               span
                 img(
                   alt="category" 
-                  src=`${domainCDN}${item.avatar}`
+                  src=`${domainPublic}${item.avatar}`
                   )
             | #{item.name}
             if (level > 0 && item.children && item.children.length > 0)

@@ -2,7 +2,7 @@ doctype html
 html(lang="vi")
   head
     script.
-      const domainCDN = "#{domainCDN}";
+      const domainPublic = "#{domainPublic}";
     meta(charset="UTF-8")
     meta(
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, target-densityDpi=device-dpi" 
@@ -23,7 +23,7 @@ html(lang="vi")
     //- Open Graph
     meta(property="og:title" content=(seo ? seo.og.title : ""))
     meta(property="og:description" content=(seo ? seo.og.description : ""))
-    meta(property="og:image" content=(seo && seo.og.image ? `${domainCDN}${seo.og.image}` : ""))
+    meta(property="og:image" content=(seo && seo.og.image ? `${domainPublic}${seo.og.image}` : ""))
 
     //- Tránh duplicate content (Google index đúng URL)
     link(rel="canonical" href=canonicalUrl)

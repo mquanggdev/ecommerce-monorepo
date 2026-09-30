@@ -3,7 +3,7 @@ import path from "path";
 import dotenv from "dotenv";
 import adminRoutes from "./routes/admin/index.route";
 import clientRoutes from "./routes/client/index.route";
-import { domainCDN,pathAdmin } from "./configs/variable.config";
+import { domainPublic, pathAdmin } from "./configs/variable.config";
 import { connectDB } from "./configs/database.config";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
@@ -32,6 +32,10 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   // Cho phép trang nhúng ảnh từ origin khác (CDN cổng 4000)
   crossOriginResourcePolicy: false,
+  // File-manager kiểm tra origin qua Referer; chỉ gửi origin, không gửi đường dẫn đầy đủ
+  referrerPolicy: {
+    policy: "strict-origin-when-cross-origin",
+  },
 }));
 
 const port = 3000;
@@ -74,8 +78,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Tạo biến toàn cục trong file PUG
 app.locals.pathAdmin = pathAdmin;
-app.locals.domainCDN = domainCDN;
-app.locals.domainPublic = process.env.CDN_PUBLIC || domainCDN;
+app.locals.domainPublic = domainPublic;
 // Khởi tạo thư viện lấy cookie
 app.use(cookieParser());
 

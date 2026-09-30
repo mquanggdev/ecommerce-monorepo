@@ -211,7 +211,7 @@ if(formSearch) {
               const htmlArray = data.list.map(item => {
                 return `
                   <a class="inner-item" href="/product/detail/${item.slug}">
-                    <img class="inner-image" src="${domainCDN}${item.images[0]}">
+                    <img class="inner-image" src="${domainPublic}${item.images[0]}">
                     <div class="inner-info">
                       <div class="inner-name">${item.name}</div>
                       <div class="inner-prices">
@@ -515,7 +515,7 @@ const drawCart = () => {
                 ${item.variant ? `variant="${encodeURIComponent(JSON.stringify(item.variant))}"` : ''}
               >
                 <a class="cart_img" href="/product/detail/${detail.slug}">
-                  <img class="img-fluid w-100" alt="${detail.name}" src="${domainCDN}${detail.images[0]}">
+                  <img class="img-fluid w-100" alt="${detail.name}" src="${domainPublic}${detail.images[0]}">
                 </a>
                 <div class="cart_text">
                   <a class="cart_title" href="/product/detail/${detail.slug}">
@@ -549,7 +549,7 @@ const drawCart = () => {
                 </td>
                 <td class="cart_page_img">
                   <div class="img">
-                    <img class="img-fluid w-100" alt="${detail.name}" src="${domainCDN}${detail.images[0]}" />
+                    <img class="img-fluid w-100" alt="${detail.name}" src="${domainPublic}${detail.images[0]}" />
                   </div>
                 </td>
                 <td class="cart_page_details">
@@ -595,7 +595,7 @@ const drawCart = () => {
               htmlCartSummary += `
                 <li>
                   <a class="img" href="/product/detail/${detail.slug}">
-                    <img class="img-fluid w-100" alt="${detail.name}" src="${domainCDN}${detail.images[0]}">
+                    <img class="img-fluid w-100" alt="${detail.name}" src="${domainPublic}${detail.images[0]}">
                   </a>
                   <div class="text">
                     <a class="title" href="/product/detail/${detail.slug}">
@@ -1219,7 +1219,7 @@ const drawComparePage = () => {
 
             html1 += `
               <td>
-                <img class="img-fluid w-100" alt="${detail.name}" src="${domainCDN}${detail.images[0]}">
+                <img class="img-fluid w-100" alt="${detail.name}" src="${domainPublic}${detail.images[0]}">
                 <a class="title" href="/product/detail/${detail.slug}">${detail.name}</a>
               </td>
             `;
@@ -1524,7 +1524,7 @@ const drawWishlistPage = () => {
               >
                 <td class="cart_page_img">
                   <div class="img">
-                    <img class="img-fluid w-100" alt="${detail.name}" src="${domainCDN}${detail.images[0]}">
+                    <img class="img-fluid w-100" alt="${detail.name}" src="${domainPublic}${detail.images[0]}">
                   </div>
                 </td>
                 <td class="cart_page_details">
@@ -2361,7 +2361,7 @@ if(profilePhoto) {
 
           if(data.code == "success") {
             const profilePhotoPreview = document.querySelector("[profile-photo-preview]");
-            profilePhotoPreview.src = `${domainCDN}${data.linkAvatar}`;
+            profilePhotoPreview.src = `${domainPublic}${data.linkAvatar}`;
             notyf.success(data.message);
           }
         })
