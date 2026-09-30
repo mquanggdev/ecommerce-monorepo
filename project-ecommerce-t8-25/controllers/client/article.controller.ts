@@ -99,6 +99,11 @@ export const detail = async (req: Request, res: Response) => {
     status: "published"
   })
   
+  if(!articleDetail) {
+    res.redirect("/");
+    return;
+  }
+
     if(articleDetail.updatedBy) {
     const accountInfo = await AccountAdmin.findOne({
       _id: articleDetail.updatedBy

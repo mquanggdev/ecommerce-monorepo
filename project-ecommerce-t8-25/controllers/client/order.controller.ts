@@ -377,7 +377,7 @@ export const createPost = async (req: Request, res: Response) => {
   })
 }
 
-export const success = (req: Request, res: Response) => {
+export const success = async (req: Request, res: Response) => {
   const { orderCode, phone } = req.query;
 
   if(!orderCode || !phone) {
@@ -385,7 +385,7 @@ export const success = (req: Request, res: Response) => {
     return;
   }
 
-  const orderDetail: any = Order.findOne({
+  const orderDetail: any = await Order.findOne({
     code: orderCode,
     phone: phone,
     deleted: false

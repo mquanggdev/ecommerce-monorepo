@@ -25,7 +25,7 @@ export const fileManager = async (req: Request, res: Response) => {
   if (req.query.page && parseInt(`${req.query.page}`) > 0) {
     page = parseInt(`${req.query.page}`);
   }
-  const totalRecord = await Media.countDocuments({});
+  const totalRecord = await Media.countDocuments(find);
   const totalPage = Math.ceil(totalRecord / limitItems);
   const skip = (page - 1) * limitItems;
   const pagination = {

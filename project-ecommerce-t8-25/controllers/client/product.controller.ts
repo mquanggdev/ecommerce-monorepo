@@ -44,7 +44,7 @@ export const productByCategory = async (req: Request, res: Response) => {
     stock?: {
       $gt: number
     },
-    $or?: any,
+    $and?: any[],
     search?: RegExp
   } = {
     deleted: false,
@@ -118,11 +118,13 @@ export const productByCategory = async (req: Request, res: Response) => {
         }
       );
 
-      if(attributeFilters.length > 0) {
-        find.$or = attributeFilters;
-      }
     }
   })
+
+  // Mỗi nhóm điều kiện là một phần tử của $and để các bộ lọc không ghi đè lẫn nhau
+  if(attributeFilters.length > 0) {
+    find.$and = [...(find.$and || []), { $or: attributeFilters }];
+  }
   // Hết Thuộc tính
 
   
@@ -133,12 +135,13 @@ export const productByCategory = async (req: Request, res: Response) => {
       .map(r => parseInt(r));
 
     if (ratings.length > 0) {
-      find.$or = ratings.map(star => ({
+      const ratingFilters = ratings.map(star => ({
         ratingAvg: {
           $gte: star,
           $lt: star + 1
         }
       }));
+      find.$and = [...(find.$and || []), { $or: ratingFilters }];
     }
   }
   // Hết Đánh giá
@@ -360,7 +363,16 @@ export const detail = async (req: Request, res: Response) => {
   // Hết Sản phẩm mua kèm
 
   // Thêm vào Lịch sử xem sản phẩm
-  const productViewHistory = req.cookies.productViewHistory ? JSON.parse(req.cookies.productViewHistory) : [];
+  let productViewHistory: string[] = [];
+  try {
+    const parsed = req.cookies.productViewHistory ? JSON.parse(req.cookies.productViewHistory) : [];
+    // Chỉ nhận mảng id hợp lệ, tối đa 20 sản phẩm gần nhất
+    if(Array.isArray(parsed)) {
+      productViewHistory = parsed.filter((id: any) => /^[a-f0-9]{24}$/i.test(`${id}`)).slice(0, 20);
+    }
+  } catch (error) {
+    productViewHistory = [];
+  }
 
   // Sản phẩm đã xem
   const viewedProducts: any = await Product

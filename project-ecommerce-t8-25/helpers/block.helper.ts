@@ -64,6 +64,11 @@ export const getBlockListByTemplate = async (slug: string) => {
     status: "active"
   })
 
+  // Chưa có template cho đường dẫn này thì trả danh sách rỗng thay vì làm sập trang
+  if(!template) {
+    return [];
+  }
+
   const blockIds = template.blocks.map((item: any) => item.blockId);
   
   const blockList = await Block.find({
@@ -75,7 +80,7 @@ export const getBlockListByTemplate = async (slug: string) => {
   // Sắp xếp lại theo đúng thứ tự
   const sortedBlocks = blockIds.map((blockId: string) => {
     return blockList.find((block: any) => block.id == blockId);
-  });
+  }).filter((block: any) => !!block);
 
   return sortedBlocks;
 }

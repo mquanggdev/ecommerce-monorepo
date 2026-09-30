@@ -37,6 +37,8 @@ export const initSocket = (io: Server) => {
     });
 
     // Chat Socket
-    chatSocket(io, socket, listAdminOnline);
+    chatSocket(io, socket, listAdminOnline).catch((error) => {
+      console.log("Lỗi khởi tạo chat socket:", error?.message);
+    });
   });
 }

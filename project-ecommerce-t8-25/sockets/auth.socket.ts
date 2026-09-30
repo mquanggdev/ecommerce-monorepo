@@ -36,6 +36,8 @@ export const authSocket = (socket: Socket, next: any) => {
     }
     next();
   } catch (error) {
+    // Token sai/hết hạn: vẫn cho kết nối tiếp nhưng không có thông tin tài khoản (thay vì treo handshake)
     console.log(error);
+    next();
   }
 }
