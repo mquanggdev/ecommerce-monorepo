@@ -318,4 +318,33 @@ Cả 3 job xanh.
 
 ## KẾT QUẢ THỰC THI
 
-*(CODEX điền phần này sau khi làm xong — xem mẫu ở mục 2.5 của `2-KE-HOACH-TONG-THE.md`)*
+- **Người thực thi:** Claude (theo yêu cầu của người dùng, thay cho CODEX)
+- **Nhánh:** `fix/3c-idempotent-thanh-toan`
+- **File đã sửa:** `controllers/client/order.controller.ts` (4 hàm `payment*` + dòng import), `helpers/point.helper.ts`, `models/order.model.ts`, `views/client/pages/order-payment-failed.pug` (mới). Hàm `createPost`, `success`, `exportPdf` không bị sửa.
+- **Cách kiểm chứng:** script tạm gọi trực tiếp các hàm helper và controller thật với `req`/`res` giả, trên 1 user thử + 3 đơn thử trong Atlas. Không đi qua HTTP (tránh tiến trình cũ giữ cổng 3000), không gọi cổng thanh toán thật. Script đã xoá, không commit.
+- **Kết quả (output thật):**
+
+```
+KC-2 confirmOrderPaid x5 song song: [false,false,true,false,false]
+KC-2 totalPoint sau addPoint x5    : 25 | status: paid | paidAt: true | pointsAwardedAt: true
+KC-3 khach huy (24)   : render client/pages/order-payment-failed | don: unpaid
+KC-3 sai so tien      : render client/pages/order-payment-failed | don: unpaid
+KC-3 sai chu ky       : render client/pages/order-payment-failed | don: unpaid
+KC-3 hop le lan 1      : redirect /order/success?orderCode=ZZ900002&phone=0900000001 | don: paid
+KC-3 hop le lan 2      : redirect /order/success?orderCode=ZZ900002&phone=0900000001 | don: paid
+KC-3 hop le lan 3      : redirect /order/success?orderCode=ZZ900002&phone=0900000001 | don: paid
+KC-3 diem cong them sau 3 lan hop le: 25
+ZALO sai so tien      : {"return_code":-1,"return_message":"amount mismatch"} | don: unpaid
+ZALO hop le lan 1      : {"return_code":1,"return_message":"success"} | don: paid
+ZALO hop le lan 2      : {"return_code":1,"return_message":"success"} | don: paid
+ZALO hop le lan 3      : {"return_code":1,"return_message":"success"} | don: paid
+ZALO diem cong them sau 3 lan: 25
+YC-6 tao link cho don da paid: redirect /order/success?orderCode=ZZ900002&phone=0900000001
+DON DEP: ban ghi thu con lai = 0
+```
+
+- `npm run typecheck` sạch; `order-payment-failed.pug` biên dịch được.
+- **Chưa kiểm chứng:** trang thất bại chưa được xem trên trình duyệt thật (chỉ xác nhận template biên dịch và được gọi đúng); chưa chạy giao dịch sandbox thật với VNPay/ZaloPay.
+- **Phát hiện thêm ngoài phạm vi:**
+  - Trang `order-success.pug` có link `/order/track` — route này không tồn tại.
+  - `phone` và `orderCode` được ghép bằng dấu `-` trong `vnp_TxnRef`/`app_user` rồi tách lại bằng `split("-")`; an toàn với dữ liệu hiện tại nhưng phụ thuộc việc cả hai không chứa `-`.
