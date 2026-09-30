@@ -26,7 +26,7 @@ export const productByCategory = async (req: Request, res: Response) => {
   }
 
   if(!categoryDetail) {
-    res.redirect("/");
+    res.status(404).render("errors/404");
     return;
   }
 
@@ -291,7 +291,7 @@ export const detail = async (req: Request, res: Response) => {
   })
 
   if(!productDetail) {
-    res.redirect("/");
+    res.status(404).render("errors/404");
     return;
   }
 

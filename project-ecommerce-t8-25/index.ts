@@ -7,6 +7,7 @@ import { domainPublic, pathAdmin } from "./configs/variable.config";
 import { connectDB } from "./configs/database.config";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import { notFound } from "./middlewares/not-found.middleware";
 
 import session from "express-session";
 import passport from "passport";
@@ -97,6 +98,9 @@ configureFacebookPassport(passport);
 
 app.use("/", clientRoutes);
 app.use(`/${pathAdmin}`, adminRoutes);
+
+// Không route nào khớp → 404
+app.use(notFound);
 
 // Khởi tạo Socket bên Server
 initSocket(io);
