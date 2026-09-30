@@ -10,7 +10,7 @@ const initialTinyMCE = () => {
         const title = document.querySelector(".tox .tox-dialog__title")?.innerHTML;
         if(title == "Insert/Edit Media" || title == "Insert/Edit Image") {
           const inputSource = document.querySelector(`.tox input.tox-textfield[type="url"]`);
-          inputSource.value = domainCDN;
+          inputSource.value = domainPublic;
         }
       })
     }
@@ -586,13 +586,13 @@ if(listFormGroupFile.length > 0) {
 
     inputFile.addEventListener("input", () => {
       const value = inputFile.value;
-      previewFile.querySelector("img").src = `${domainCDN}${value}`;
+      previewFile.querySelector("img").src = `${domainPublic}${value}`;
     })
 
     // Hiển thị mặc định
     if(inputFile.value) {
       const value = inputFile.value;
-      previewFile.querySelector("img").src = `${domainCDN}${value}`;
+      previewFile.querySelector("img").src = `${domainPublic}${value}`;
     }
   })
 }
@@ -1510,7 +1510,7 @@ if(listButtonPaste) {
       for (const link of listLink) {
         elementListImage.insertAdjacentHTML("beforeend", `
           <div class="inner-image">
-            <img src="${domainCDN}${link}" alt="" src-relative="${link}">
+            <img src="${domainPublic}${link}" alt="" src-relative="${link}">
             <span class="inner-remove">x</span>
           </div>
         `);

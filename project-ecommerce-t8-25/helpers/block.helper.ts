@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import path from "path";
 import pug from "pug";
-import { domainCDN } from "../configs/variable.config";
+import { domainPublic } from "../configs/variable.config";
 import Template from "../models/template.model";
 import Block from "../models/block.model";
 import { getProductByCategory ,getBlogByCategory} from "./product.helper";
@@ -42,7 +42,7 @@ export const renderHTML = async (req: Request, res: Response, blockList: any) =>
 
       const html = pug.renderFile(blockPath, {
         categoryProductList: res.locals.categoryProductList,
-        domainCDN: domainCDN,
+        domainPublic: domainPublic,
         blockData: block.data,
         blockProductList: productList,
         blockTabList: tabList,

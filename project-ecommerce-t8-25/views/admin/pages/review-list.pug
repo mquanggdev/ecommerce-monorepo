@@ -29,7 +29,7 @@ block main
                       div(class="d-flex align-items-center")
                         if (item.user.avatar)
                           img(
-                            src=`${domainCDN}${item.user.avatar}`
+                            src=`${domainPublic}${item.user.avatar}`
                             class="rounded thumb-md me-1 d-inline"
                           )
                         div
@@ -39,7 +39,7 @@ block main
                       div(class="d-flex align-items-center")
                         if (item.product.images && item.product.images.length > 0)
                           img(
-                            src=`${domainCDN}${item.product.images[0]}`
+                            src=`${domainPublic}${item.product.images[0]}`
                             class="rounded thumb-md me-1 d-inline"
                           )
                         div #{item.product.name}
@@ -49,7 +49,7 @@ block main
                       div(class="d-flex align-items-center flex-wrap")
                         each img in item.images
                           img(
-                            src=`${domainCDN}${img}`
+                            src=`${domainPublic}${img}`
                             class="rounded thumb-md me-1 d-inline"
                           )
                     td

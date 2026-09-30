@@ -1,5 +1,6 @@
 export const pathAdmin = "admin";
 export const domainCDN = process.env.CDN_URL || "http://localhost:4000";
+export const domainPublic = process.env.CDN_PUBLIC || domainCDN;
 
 export const permissionList = [
   {

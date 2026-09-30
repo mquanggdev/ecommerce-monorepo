@@ -105,13 +105,13 @@ if(formChat) {
         const ext = filePath.split(".").pop().toLowerCase();
         if (["jpg","jpeg","png","gif","webp"].includes(ext)) {
           html += `
-            <a href="${domainCDN}${filePath}" target="_blank">
-              <img src="${domainCDN}${filePath}" class="chat-image">
+            <a href="${domainPublic}${filePath}" target="_blank">
+              <img src="${domainPublic}${filePath}" class="chat-image">
             </a>
           `;
         } else {
           html += `
-            <a href="${domainCDN}${filePath}" target="_blank">
+            <a href="${domainPublic}${filePath}" target="_blank">
               📄 File đính kèm
             </a>
           `;

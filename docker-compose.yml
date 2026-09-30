@@ -2,18 +2,31 @@ services:
 
   ecommerce:
     build: ./project-ecommerce-t8-25
-
     ports:
       - "3000:3000"
-
     env_file:
       - ./project-ecommerce-t8-25/.env.docker
+    depends_on:
+      - file-manager
+    restart: unless-stopped
+    networks:
+      - app-net
 
   file-manager:
     build: ./file-manager
-
     ports:
       - "4000:4000"
-
     env_file:
       - ./file-manager/.env.docker
+    volumes:
+      # QUAN TRỌNG: giữ file upload tồn tại qua các lần rebuild container
+      - media-data:/app/media
+    restart: unless-stopped
+    networks:
+      - app-net
+
+volumes:
+  media-data:
+
+networks:
+  app-net:

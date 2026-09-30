@@ -517,4 +517,18 @@ Tab **Actions** → cả 3 job ✅. Batch này sửa `docker-compose.yml` nên j
 
 ## KẾT QUẢ THỰC THI
 
-*(CODEX điền phần này sau khi làm xong — xem mẫu ở mục 2.5 của `2-KE-HOACH-TONG-THE.md`)*
+- **Nhánh:** `fix/3b-docker-domain-public`
+- **Commit mã nguồn:** `e544dbe` — 33 file (4 JS, 24 Pug, `index.ts`, `configs/variable.config.ts`, `helpers/block.helper.ts`, `docker-compose.yml`)
+- **Kết quả kiểm chứng:**
+  - KC-1: `grep -rn "domainCDN" views/ public/` → rỗng.
+  - KC-2: `domainCDN` còn đúng 7 file tầng server (4 controller, `sockets/chat.socket.ts`, `jobs/chat.job.ts`, `configs/variable.config.ts`).
+  - KC-3: `npm run typecheck` sạch.
+  - Bẫy mục 4.3: chạy `getBlockListByTemplate("/")` + `renderHTML` thật → 12 block, 19 URL `/media`, **0 URL chứa `undefined`**.
+  - `docker compose config --quiet` hợp lệ; volume `media-data` gắn vào `/app/media`.
+  - KC-5 (người dùng chạy tay): upload file → `docker compose down` → `docker compose up -d --build` → **file vẫn còn**.
+  - `.env.docker`: `CDN_URL=http://file-manager:4000`, `CDN_PUBLIC=http://localhost:4000`, `NODE_ENV` giữ rỗng.
+- **YC-7 — Puppeteer trong container: HỎNG.**
+  `Failed to launch the browser process: spawn /root/.cache/puppeteer/chrome/linux-146.0.7680.153/chrome-linux64/chrome ENOENT`
+  → `/order/export-pdf` không chạy được khi dùng Docker (chạy local vẫn bình thường). Không sửa ở batch này; chuyển sang batch 7C (cài Chromium của Alpine + `PUPPETEER_EXECUTABLE_PATH`).
+- **Chưa kiểm chứng:** KC-4 (xem bằng mắt 7 trang trên trình duyệt) và KC-6 (DNS nội bộ giữa hai container) không có kết quả ghi lại.
+- **Phát hiện thêm ngoài phạm vi:** không.
