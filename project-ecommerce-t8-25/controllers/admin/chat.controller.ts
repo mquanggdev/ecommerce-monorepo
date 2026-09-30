@@ -9,6 +9,16 @@ import axios from 'axios';
 import { domainCDN, pathAdmin } from '../../configs/variable.config';
 import { aiGenerateAnswer } from '../../helpers/ai.helper';
 
+// Chỉ trả về phòng chat được giao cho chính admin đang đăng nhập
+const findOwnChatRoom = async (res: Response, roomId: any) => {
+  const adminId = res.locals.accountAdmin.id;
+  if(!adminId) return null;
+  return await ChatRoom.findOne({
+    _id: roomId,
+    adminId: adminId
+  });
+}
+
 export const myChatList = async (req: Request, res: Response) => {
   // Danh sách phòng chat
   const chatRoomList: any = await getChatRoomList(res.locals.accountAdmin.id);
@@ -23,9 +33,7 @@ export const detail = async (req: Request, res: Response) => {
   try {
     // Chi tiết phòng chat
     const id = req.params.id;
-    const chatRoomDetail = await ChatRoom.findOne({
-      _id: id
-    });
+    const chatRoomDetail = await findOwnChatRoom(res, id);
 
     if(!chatRoomDetail) {
       res.redirect('/admin/dashboard');
@@ -237,9 +245,7 @@ export const rate = async (req: Request, res: Response) => {
   try {    
     // Chi tiết phòng chat
     const id = req.params.id;
-    const chatRoomDetail = await ChatRoom.findOne({
-      _id: id
-    });
+    const chatRoomDetail = await findOwnChatRoom(res, id);
 
     if(!chatRoomDetail) {
       res.redirect(`/${pathAdmin}/dashboard`);
@@ -265,6 +271,16 @@ export const rate = async (req: Request, res: Response) => {
 export const suggestReply = async (req: Request, res: Response) => {
   try {
     const roomId = req.params.id;
+
+    // Không cho dùng AI trên phòng chat của admin khác
+    const ownChatRoom = await findOwnChatRoom(res, roomId);
+    if(!ownChatRoom) {
+      res.json({
+        code: "error",
+        message: "Không tìm thấy phòng chat!"
+      })
+      return;
+    }
 
     const messages = await ChatMessage.find({
       roomId: roomId
@@ -312,6 +328,16 @@ export const suggestReply = async (req: Request, res: Response) => {
 export const editReplyPost = async (req: Request, res: Response) => {
   try {
     const roomId = req.params.id;
+
+    // Không cho dùng AI trên phòng chat của admin khác
+    const ownChatRoom = await findOwnChatRoom(res, roomId);
+    if(!ownChatRoom) {
+      res.json({
+        code: "error",
+        message: "Không tìm thấy phòng chat!"
+      })
+      return;
+    }
     const { content: contentChat } = req.body;
 
     const messages = await ChatMessage.find({
@@ -364,6 +390,16 @@ export const summary = async (req: Request, res: Response) => {
   try {
     const roomId = req.params.id;
 
+    // Không cho dùng AI trên phòng chat của admin khác
+    const ownChatRoom = await findOwnChatRoom(res, roomId);
+    if(!ownChatRoom) {
+      res.json({
+        code: "error",
+        message: "Không tìm thấy phòng chat!"
+      })
+      return;
+    }
+
     const messages = await ChatMessage.find({
       roomId: roomId
     })
@@ -409,6 +445,16 @@ export const summary = async (req: Request, res: Response) => {
 export const customerEmotions = async (req: Request, res: Response) => {
   try {
     const roomId = req.params.id;
+
+    // Không cho dùng AI trên phòng chat của admin khác
+    const ownChatRoom = await findOwnChatRoom(res, roomId);
+    if(!ownChatRoom) {
+      res.json({
+        code: "error",
+        message: "Không tìm thấy phòng chat!"
+      })
+      return;
+    }
 
     const messages = await ChatMessage.find({
       roomId: roomId
