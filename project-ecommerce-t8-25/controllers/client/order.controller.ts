@@ -15,6 +15,7 @@ import { addPointAfterPayment, confirmOrderPaid } from '../../helpers/point.help
 import { pointConfig } from '../../configs/variable.config';
 import AccountUser from '../../models/account-user.model';
 import { getApiPayment, getApiShipping, getGeneral } from '../../configs/setting.config';
+import { decreaseStock, findVariantIndex, increaseStock } from '../../helpers/stock.helper';
 
 export const createPost = async (req: Request, res: Response) => {
   const dataFinal: any = {};
@@ -49,52 +50,85 @@ export const createPost = async (req: Request, res: Response) => {
   dataFinal.orderStatus = "pending";
 
   // Mảng items
+  // Bước này chỉ dựng và kiểm tra, CHƯA trừ kho. Một item không hợp lệ thì từ chối cả đơn.
   dataFinal.items = [];
+  const stockItems: { productId: string, quantity: number, variantIndex: number, variantValue?: any[], name: string }[] = [];
   for (const item of req.body.items) {
+    const quantity = Number(item.quantity);
+
     const productDetail = await Product.findOne({
       _id: item.productId,
       deleted: false,
       status: "active"
     });
 
-    if(productDetail) {
-      let price = 0;
-      const variant = [];
+    if(!productDetail) {
+      res.json({
+        code: "error",
+        message: "Sản phẩm không còn tồn tại hoặc đã ngừng bán!"
+      });
+      return;
+    }
 
-      if(item.variant) {
-        // Tìm đúng biến thể khớp trong danh sách
-        const variantMatched = productDetail.variants.find(variantItem => {
-          return (
-            variantItem.attributeValue.every((attr: any) => {
-              const selected = item.variant.find((v: any) => v.attrId === attr.attrId);
-              return selected && selected.value === attr.value;
-            })
-          );
+    let price = 0;
+    let variantIndex = -1;
+    let variantValue: any[] | undefined = undefined;
+    const variant = [];
+    const hasVariants = (productDetail.variants || []).length > 0;
+    const selectedVariant: any[] = Array.isArray(item.variant) ? item.variant : [];
+
+    if(hasVariants) {
+      // Sản phẩm có biến thể thì bắt buộc phải chọn phân loại
+      if(selectedVariant.length === 0) {
+        res.json({
+          code: "error",
+          message: `Vui lòng chọn phân loại cho sản phẩm ${productDetail.name}!`
         });
-        price = variantMatched.priceNew || 0;
-        for (const v of item.variant) {
-          const attribute: any = await AttributeProduct
-            .findOne({
-              _id: v.attrId
-            })
-            .select("name")
-            .lean();
-          variant.push(`${attribute.name}: ${v.label}`);
-        };
-      } else {
-        price = productDetail.priceNew || 0;
+        return;
       }
 
-      const itemFinal = {
-        productId: item.productId,
-        quantity: item.quantity,
-        price: price,
-        variant: variant.length > 0 ? variant : undefined,
-        image: productDetail.images[0],
-        name: productDetail.name
+      // Tìm đúng biến thể khớp và đang bật trong danh sách
+      variantIndex = findVariantIndex(productDetail.variants, selectedVariant);
+      if(variantIndex < 0) {
+        res.json({
+          code: "error",
+          message: `Phân loại của sản phẩm ${productDetail.name} không hợp lệ!`
+        });
+        return;
+      }
+
+      price = productDetail.variants[variantIndex].priceNew || 0;
+      variantValue = selectedVariant.map((v: any) => ({ attrId: v.attrId, value: v.value }));
+      for (const v of selectedVariant) {
+        const attribute: any = await AttributeProduct
+          .findOne({
+            _id: v.attrId
+          })
+          .select("name")
+          .lean();
+        variant.push(`${attribute ? attribute.name : ""}: ${v.label || v.value}`);
       };
-      dataFinal.items.push(itemFinal);
+    } else {
+      price = productDetail.priceNew || 0;
     }
+
+    const itemFinal = {
+      productId: item.productId,
+      quantity: quantity,
+      price: price,
+      variant: variant.length > 0 ? variant : undefined,
+      image: productDetail.images[0],
+      name: productDetail.name,
+      variantValue: variantValue
+    };
+    dataFinal.items.push(itemFinal);
+    stockItems.push({
+      productId: item.productId,
+      quantity: quantity,
+      variantIndex: variantIndex,
+      variantValue: variantValue,
+      name: `${productDetail.name}`
+    });
   }
 
   // Trường subTotal
@@ -160,6 +194,7 @@ export const createPost = async (req: Request, res: Response) => {
         dataFinal.discount = couponDetail.value;
       }
 
+      // TODO 3E: usedCount đang tăng trước khi trừ kho và lưu đơn, nếu bước sau lỗi thì mã bị tiêu oan
       // Cập nhật lại số lượng đã dùng
       await Coupon.updateOne({
         _id: couponDetail.id,
@@ -179,93 +214,126 @@ export const createPost = async (req: Request, res: Response) => {
   }
   // Hết trường discount
 
-  // Trường shippingMethod
-  // Tọa độ của người gửi
-  const shopLocation = {
-    lat: 10.8037448,
-    lng: 106.6617749
-  };
+  // Trừ kho (nguyên tử từng sản phẩm). Hết hàng ở bất kỳ sản phẩm nào thì hoàn lại phần đã trừ.
+  const decreased: typeof stockItems = [];
+  const restoreStock = async () => {
+    for (const stockItem of decreased) {
+      await increaseStock(stockItem.productId, stockItem.quantity, stockItem.variantValue);
+    }
+  }
 
-  const shopInfoAddress = await getInfoAddress(shopLocation.lat, shopLocation.lng);
+  for (const stockItem of stockItems) {
+    const isDecreased = await decreaseStock(stockItem.productId, stockItem.quantity, stockItem.variantIndex);
+    if(!isDecreased) {
+      await restoreStock();
+      res.json({
+        code: "error",
+        message: `Sản phẩm ${stockItem.name} không đủ số lượng trong kho!`
+      });
+      return;
+    }
+    decreased.push(stockItem);
+  }
+  // Hết Trừ kho
+
+  // Từ đây nếu có lỗi (GoShip, lưu đơn...) thì phải hoàn lại kho đã trừ
+  try {
+    // Trường shippingMethod
+    // Tọa độ của người gửi
+    const shopLocation = {
+      lat: 10.8037448,
+      lng: 106.6617749
+    };
+
+    const shopInfoAddress = await getInfoAddress(shopLocation.lat, shopLocation.lng);
   
-  const userInfoAddress = await getInfoAddress(dataFinal.latitude, dataFinal.longitude);
+    const userInfoAddress = await getInfoAddress(dataFinal.latitude, dataFinal.longitude);
 
-  // Tính trọng lượng đơn hàng
-  const totalWeight = dataFinal.items.reduce((total: number, item: any) => total + item.quantity * 500, 0); // mỗi 1 sản phẩm nặng 500gram
+    // Tính trọng lượng đơn hàng
+    const totalWeight = dataFinal.items.reduce((total: number, item: any) => total + item.quantity * 500, 0); // mỗi 1 sản phẩm nặng 500gram
 
-  const dataGoShip = {
-    shipment: {
-      rate: req.body.shippingMethod,
-      payer: 0, // Người trả phí, 1: Người gửi, 0: Người nhận
-      address_from: {
-        name: "Nguyễn Văn A",
-        phone: "0912345678",
-        street: "11 Sư Vạn Hạnh, Phường 12, Quận 10, Thành phố Hồ Chí Minh 700000, Việt Nam",
-        city: shopInfoAddress.city,
-        district: shopInfoAddress.district,
-        ward: shopInfoAddress.ward
-      },
-      address_to: {
-        name: dataFinal.fullName,
-        phone: dataFinal.phone,
-        street: dataFinal.address,
-        city: userInfoAddress.city,
-        district: userInfoAddress.district,
-        ward: userInfoAddress.ward
-      },
-      parcel: {
-        cod: `${dataFinal.subTotal - dataFinal.discount}`,
-        amount: `${dataFinal.subTotal - dataFinal.discount}`,
-        weight: `${totalWeight}`,
-        width: "10",
-        height: "10",
-        length: "10",
-        metadata: "Hàng dễ vỡ, vui lòng nhẹ tay."
+    const dataGoShip = {
+      shipment: {
+        rate: req.body.shippingMethod,
+        payer: 0, // Người trả phí, 1: Người gửi, 0: Người nhận
+        address_from: {
+          name: "Nguyễn Văn A",
+          phone: "0912345678",
+          street: "11 Sư Vạn Hạnh, Phường 12, Quận 10, Thành phố Hồ Chí Minh 700000, Việt Nam",
+          city: shopInfoAddress.city,
+          district: shopInfoAddress.district,
+          ward: shopInfoAddress.ward
+        },
+        address_to: {
+          name: dataFinal.fullName,
+          phone: dataFinal.phone,
+          street: dataFinal.address,
+          city: userInfoAddress.city,
+          district: userInfoAddress.district,
+          ward: userInfoAddress.ward
+        },
+        parcel: {
+          cod: `${dataFinal.subTotal - dataFinal.discount}`,
+          amount: `${dataFinal.subTotal - dataFinal.discount}`,
+          weight: `${totalWeight}`,
+          width: "10",
+          height: "10",
+          length: "10",
+          metadata: "Hàng dễ vỡ, vui lòng nhẹ tay."
+        }
       }
-    }
-  };
+    };
 
-  const apiShipping = await getApiShipping();
+    const apiShipping = await getApiShipping();
 
-  const goshipRes = await axios.post("https://sandbox.goship.io/api/v2/shipments", dataGoShip, {
-    headers: {
-      Authorization: `Bearer ${apiShipping.tokenGoShip}`,
-      "Content-Type": "application/json"
-    }
-  });
-
-  dataFinal.shipping = {
-    goshipOrderId: goshipRes.data.id,
-    carrierName: goshipRes.data.carrier,
-    carrierCode: goshipRes.data.carrier_short_name,
-    fee: goshipRes.data.fee,
-    cod: goshipRes.data.cod,
-  };
-
-  // Trường usedPoint và pointDiscount
-  dataFinal.usedPoint = 0;
-  dataFinal.pointDiscount = 0;
-  if(res.locals.accountUser) {
-    dataFinal.usedPoint = res.locals.accountUser.totalPoint - res.locals.accountUser.usedPoint;
-    dataFinal.pointDiscount = dataFinal.usedPoint * pointConfig.POINT_TO_MONEY;
-  }
-
-  // Trường total
-  dataFinal.total = dataFinal.subTotal + dataFinal.shipping.fee - dataFinal.discount - dataFinal.pointDiscount;
-
-  // Lưu dữ liệu vào CSDL
-  const newRecord = new Order(dataFinal);
-  await newRecord.save();
-
-  // Cập nhật lại số điểm của người dùng
-  if(res.locals.accountUser) {
-    await AccountUser.updateOne({
-      _id: res.locals.accountUser.id
-    }, {
-      usedPoint: res.locals.accountUser.totalPoint
+    const goshipRes = await axios.post("https://sandbox.goship.io/api/v2/shipments", dataGoShip, {
+      headers: {
+        Authorization: `Bearer ${apiShipping.tokenGoShip}`,
+        "Content-Type": "application/json"
+      }
     });
+
+    dataFinal.shipping = {
+      goshipOrderId: goshipRes.data.id,
+      carrierName: goshipRes.data.carrier,
+      carrierCode: goshipRes.data.carrier_short_name,
+      fee: goshipRes.data.fee,
+      cod: goshipRes.data.cod,
+    };
+
+    // Trường usedPoint và pointDiscount
+    dataFinal.usedPoint = 0;
+    dataFinal.pointDiscount = 0;
+    if(res.locals.accountUser) {
+      dataFinal.usedPoint = res.locals.accountUser.totalPoint - res.locals.accountUser.usedPoint;
+      dataFinal.pointDiscount = dataFinal.usedPoint * pointConfig.POINT_TO_MONEY;
+    }
+
+    // Trường total
+    dataFinal.total = dataFinal.subTotal + dataFinal.shipping.fee - dataFinal.discount - dataFinal.pointDiscount;
+
+    // Lưu dữ liệu vào CSDL
+    const newRecord = new Order(dataFinal);
+    await newRecord.save();
+
+    // Cập nhật lại số điểm của người dùng
+    if(res.locals.accountUser) {
+      await AccountUser.updateOne({
+        _id: res.locals.accountUser.id
+      }, {
+        usedPoint: res.locals.accountUser.totalPoint
+      });
+    }
+    // Hết Cập nhật lại số điểm của người dùng
+  } catch (error: any) {
+    console.error("Tạo đơn hàng thất bại:", error?.message);
+    await restoreStock();
+    res.json({
+      code: "error",
+      message: "Không thể tạo đơn hàng, vui lòng thử lại!"
+    });
+    return;
   }
-  // Hết Cập nhật lại số điểm của người dùng
 
   res.json({
     code: "success",

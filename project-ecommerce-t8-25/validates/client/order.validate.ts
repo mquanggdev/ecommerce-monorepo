@@ -44,10 +44,37 @@ export const createPost = (req: Request, res: Response, next: NextFunction) => {
     note: Joi.string().allow(''),
     items: Joi.array()
       .min(1)
+      .max(50)
+      .items(
+        Joi.object({
+          productId: Joi.string().hex().length(24).required(),
+          quantity: Joi.number().integer().min(1).max(100).required(),
+          variant: Joi.array()
+            .items(
+              Joi.object({
+                attrId: Joi.string().required(),
+                value: Joi.alternatives().try(Joi.string(), Joi.number()).required(),
+              }).unknown(true)
+            )
+            .allow(null)
+            .optional()
+        }).unknown(true) // client còn gửi kèm các trường hiển thị khác
+      )
       .required()
       .messages({
         "array.min": "Giỏ hàng không được để trống!",
+        "array.max": "Đơn hàng có quá nhiều sản phẩm!",
         "any.required": "Vui lòng chọn sản phẩm!",
+        "number.base": "Số lượng không hợp lệ!",
+        "number.integer": "Số lượng phải là số nguyên!",
+        "number.min": "Số lượng phải từ 1 trở lên!",
+        "number.max": "Số lượng mỗi sản phẩm tối đa là 100!",
+        "string.base": "Sản phẩm không hợp lệ!",
+        "string.hex": "Sản phẩm không hợp lệ!",
+        "string.length": "Sản phẩm không hợp lệ!",
+        "object.base": "Sản phẩm không hợp lệ!",
+        "array.base": "Phân loại sản phẩm không hợp lệ!",
+        "alternatives.types": "Phân loại sản phẩm không hợp lệ!",
       }),
     coupon: Joi.string().allow(''),
     paymentMethod: Joi.string()

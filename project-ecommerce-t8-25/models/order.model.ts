@@ -17,7 +17,8 @@ const schema = new mongoose.Schema(
         price: Number,
         variant: [String], // Một mảng các label (Ví dụ: ["Kích cỡ: Size M", "Màu sắc: Đen"])
         image: String,
-        name: String
+        name: String,
+        variantValue: Array // Dữ liệu gốc của biến thể [{attrId, value}] — dùng để hoàn kho
       }
     ],
     subTotal: Number, // Tạm tính
@@ -69,6 +70,7 @@ const schema = new mongoose.Schema(
       type: Number,
       default: 0 // số tiền được trừ từ điểm
     },
+    stockRestoredAt: Date, // Thời điểm đã hoàn kho (chặn hoàn lặp)
     paidAt: Date, // Thời điểm xác nhận thanh toán
     pointsAwardedAt: Date, // Thời điểm đã cộng điểm thưởng (dùng để chặn cộng lặp)
     payment: { // Thông tin giao dịch từ cổng thanh toán
