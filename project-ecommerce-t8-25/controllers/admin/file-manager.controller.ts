@@ -314,7 +314,10 @@ export const deleteFolderDel = async (req: Request, res: Response) => {
     }
 
     // Xóa các file liên quan trong CSDL
-    const regexFolderPath = new RegExp(`${folderPath}`);
+    // Chỉ khớp đúng thư mục bị xóa và các thư mục con của nó
+    const folderNormalized = "/" + `${folderPath}`.replace(/^\/+/, "").replace(/\/+$/, "");
+    const folderEscaped = folderNormalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regexFolderPath = new RegExp(`^${folderEscaped}(/|$)`);
     await Media.deleteMany({
       folder: regexFolderPath
     });

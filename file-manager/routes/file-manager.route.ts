@@ -11,12 +11,20 @@ const router = Router();
 const storage = multer.memoryStorage();
 
 // Fix lỗi font tiếng Việt trong tên file (multer mặc định Latin1)
+// Các loại file trình duyệt sẽ chạy như một trang web nếu mở trực tiếp → không cho upload
+const blockedExtensions = [".html", ".htm", ".xhtml", ".svg", ".js", ".mjs", ".xml"];
+
 const upload = multer({
   storage,
+  limits: {
+    fileSize: 20 * 1024 * 1024, // Tối đa 20MB mỗi file
+    files: 10 // Tối đa 10 file mỗi lần upload
+  },
   fileFilter: (req, file, cb) => {
     // Ép originalname về UTF-8
     file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
-    cb(null, true);
+    const extension = file.originalname.substring(file.originalname.lastIndexOf(".")).toLowerCase();
+    cb(null, !blockedExtensions.includes(extension));
   }
 });
 
