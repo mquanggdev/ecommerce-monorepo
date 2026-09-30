@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import Order from '../../models/order.model';
 import { pathAdmin } from '../../configs/variable.config';
 import { Parser } from 'json2csv';
+import { increaseStock } from '../../helpers/stock.helper';
 
 export const list = async (req: Request, res: Response) => {
   const find: {
@@ -88,6 +89,28 @@ export const editPatch = async (req: Request, res: Response) => {
       return;
     }
 
+    // Kiểm tra trạng thái hợp lệ
+    const orderStatusList = ["pending", "confirmed", "shipping", "completed", "cancelled", "returned"];
+    const paymentStatusList = ["unpaid", "paid", "refunded"];
+    if (!orderStatusList.includes(orderStatus) || !paymentStatusList.includes(paymentStatus)) {
+      res.json({
+        code: "error",
+        message: "Trạng thái không hợp lệ!"
+      });
+      return;
+    }
+
+    // Đơn đã hủy hoặc đã trả thì kho đã được hoàn, không cho đổi sang trạng thái khác
+    const closedStatusList = ["cancelled", "returned"];
+    const oldOrderStatus = `${order.orderStatus}`;
+    if (closedStatusList.includes(oldOrderStatus) && orderStatus !== oldOrderStatus) {
+      res.json({
+        code: "error",
+        message: "Không thể thay đổi trạng thái đơn hàng đã hủy hoặc đã trả!"
+      });
+      return;
+    }
+
     // Không cho quay ngược đơn đã hoàn thành
     if (order.orderStatus === "completed" && orderStatus !== "completed") {
       res.json({
@@ -111,6 +134,24 @@ export const editPatch = async (req: Request, res: Response) => {
     order.note = note;
 
     await order.save();
+
+    // Hoàn kho khi đơn chuyển sang hủy hoặc trả hàng (chỉ một lần cho mỗi đơn)
+    if (closedStatusList.includes(orderStatus) && !closedStatusList.includes(oldOrderStatus)) {
+      const claimed: any = await Order.findOneAndUpdate(
+        {
+          _id: id,
+          stockRestoredAt: { $exists: false }
+        },
+        {
+          stockRestoredAt: new Date()
+        }
+      );
+      if (claimed) {
+        for (const item of claimed.items) {
+          await increaseStock(item.productId, item.quantity, item.variantValue);
+        }
+      }
+    }
 
     res.json({
       code: "success",

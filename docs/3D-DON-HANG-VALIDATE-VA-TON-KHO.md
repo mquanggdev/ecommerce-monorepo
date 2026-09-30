@@ -363,4 +363,50 @@ git push origin fix/3d-don-hang-ton-kho
 
 ## KẾT QUẢ THỰC THI
 
-*(CODEX điền phần này sau khi làm xong — xem mẫu ở mục 2.5 của `2-KE-HOACH-TONG-THE.md`)*
+- **Người thực thi:** Claude (theo yêu cầu của người dùng, thay cho CODEX)
+- **Nhánh:** `fix/3d-don-hang-ton-kho` — **xếp chồng lên** `fix/3c-idempotent-thanh-toan` (3C chưa merge lúc làm). Merge 3C trước, rồi mới merge 3D.
+- **File đã sửa:** `validates/client/order.validate.ts`, `controllers/client/order.controller.ts` (chỉ `createPost` + import), `controllers/admin/order.controller.ts` (chỉ `editPatch` + import), `models/order.model.ts`, `helpers/stock.helper.ts` (mới).
+- **Cách kiểm chứng:** script tạm gọi trực tiếp validate/controller/helper thật với `req`/`res` giả, trên 1 user thử + 2 sản phẩm thử trong Atlas. Script đã xoá, không commit.
+- **Kết quả (output thật):**
+
+```
+KC-2 []              : Giỏ hàng không được để trống!
+KC-2 quantity 0      : Số lượng phải từ 1 trở lên!
+KC-2 quantity -3     : Số lượng phải từ 1 trở lên!
+KC-2 quantity 1.5    : Số lượng phải là số nguyên!
+KC-2 quantity 101    : Số lượng mỗi sản phẩm tối đa là 100!
+KC-2 productId abc   : Sản phẩm không hợp lệ!
+KC-2 hop le          : QUA VALIDATE
+TAO khong ton tai    : Sản phẩm không còn tồn tại hoặc đã ngừng bán!
+TAO thieu phan loai  : Vui lòng chọn phân loại cho sản phẩm KC3D-TEST bien the!
+TAO phan loai sai    : Phân loại của sản phẩm KC3D-TEST bien the không hợp lệ!
+TAO phan loai da tat : Phân loại của sản phẩm KC3D-TEST bien the không hợp lệ!
+TAO het hang (2 item): Sản phẩm KC3D-TEST bien the không đủ số lượng trong kho!
+   -> kho sau khi bi tu choi: 3 | product=99 S=7 M=2 (phai la 3 | S=7 M=2)
+   -> so don duoc tao: 0
+TAO loi van chuyen   : Không thể tạo đơn hàng, vui lòng thử lại! | kho: 3 (phai la 3) | don: 0
+KC-3 san pham don, 10 lan song song, kho 3: 3 lan true | kho: 0
+KC-3 bien the M, 5 lan song song, kho 2   : 2 lan true | product=99 S=7 M=0
+KC-3 increaseStock bien the M +1          : product=99 S=7 M=1
+KC-5 tao don         : success Đặt hàng thành công!
+KC-5 don: items = KC3D-TEST don x2 @10000 variantValue=[] ; KC3D-TEST bien the x1 @30000 variantValue=[{"attrId":"aaaaaaaaaaaaaaaaaaaaaaaa","value":"m"}]
+KC-5 subTotal = 50000 (phai la 2*10000 + 1*30000 = 50000)
+KC-5 kho sau dat     : 1 | product=99 S=7 M=1 (phai la 1 | S=7 M=1)
+ADMIN trang thai la  : Trạng thái không hợp lệ!
+ADMIN huy x3 song song: ["Cập nhật đơn hàng thành công!","Cập nhật đơn hàng thành công!","Cập nhật đơn hàng thành công!"]
+KC-4 kho sau khi huy : 3 | product=99 S=7 M=2 (phai la 3 | S=7 M=2)
+ADMIN mo lai don huy : Không thể thay đổi trạng thái đơn hàng đã hủy hoặc đã trả!
+DON DEP: ban ghi thu con lai = 0
+```
+
+- `npm run typecheck` sạch.
+- **Tác dụng phụ của việc kiểm chứng:** script chạy 2 lần, mỗi lần tạo một đơn COD thật qua GoShip **sandbox** → có 2 vận đơn thử nằm lại trên tài khoản GoShip sandbox. Bản ghi trong MongoDB đã xoá hết.
+- **Chưa kiểm chứng:** chưa đặt hàng qua giao diện trình duyệt thật (form checkout → `/order/create`); dạng dữ liệu client gửi được suy ra từ `public/client/assets/js/main.js` (`productId`, `quantity`, `variant[{attrId, value, label}]`, kèm `checked`).
+- **Khác với brief:**
+  - `value` của biến thể chấp nhận cả chuỗi lẫn số (brief ghi chỉ chuỗi).
+  - Lỗi sau khi trừ kho chỉ ghi `error.message` ra log thay vì nguyên object — object lỗi của axios chứa cả API key OpenMap trong URL.
+- **Phát hiện thêm ngoài phạm vi (dành cho 3E):**
+  - Lệnh cập nhật `usedPoint` của khách nằm **sau** `newRecord.save()` và trong cùng `try`: nếu lệnh đó lỗi thì kho bị hoàn trong khi đơn đã lưu.
+  - Luật có sẵn "không đổi trạng thái đơn đã `completed`" chặn luôn `completed → returned`, nên hiện không có đường nào để trả hàng một đơn đã giao xong.
+  - Đơn tạo trước batch này không có `variantValue` → khi huỷ, kho được cộng vào `product.stock` thay vì biến thể.
+  - Coupon vẫn bị tăng `usedCount` trước khi trừ kho (đã đánh dấu `// TODO 3E`).
