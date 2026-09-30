@@ -1,10 +1,20 @@
 import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
+import { isSafeName, mediaRoot, resolveInsideMedia, stripMediaPrefix } from "../helpers/path.helper";
 
 export const upload = (req: Request, res: Response) => {
   try {
     const files = req.files as Express.Multer.File[];
+
+    // File bị chặn bởi fileFilter sẽ không có mặt trong req.files
+    if(!files || files.length === 0) {
+      res.json({
+        code: "error",
+        message: "Không có file hợp lệ để upload!"
+      });
+      return;
+    }
 
     const saveLinks: {
       folder: string,
@@ -13,12 +23,15 @@ export const upload = (req: Request, res: Response) => {
       size: number
     }[] = [];
 
-    let mediaDir = path.join(__dirname, "../media");
-    
-    // Thêm folderPath
+    // Thêm folderPath (phải nằm trong thư mục media)
     const folderPath = req.body.folderPath;
-    if(folderPath) {
-      mediaDir = path.join(mediaDir, folderPath);
+    const mediaDir = resolveInsideMedia(folderPath || "");
+    if(!mediaDir) {
+      res.json({
+        code: "error",
+        message: "Đường dẫn không hợp lệ!"
+      })
+      return;
     }
     
     // Kiểm tra và tạo thư mục nếu chưa tồn tại
@@ -27,7 +40,8 @@ export const upload = (req: Request, res: Response) => {
     }
     
     files.forEach(file => {
-      const filename = `${Date.now()}-${file.originalname}`;
+      // Chỉ lấy phần tên file, bỏ mọi thành phần thư mục do client gửi kèm
+      const filename = `${Date.now()}-${path.basename(file.originalname.replace(/\\/g, "/"))}`;
       const savePath = path.join(mediaDir, filename);
       fs.writeFileSync(savePath, file.buffer);
       saveLinks.push({
@@ -63,11 +77,17 @@ export const changeFileNamePatch = (req: Request, res: Response) => {
       return;
     }
 
-    // Tạo đường dẫn đến file
-    const cleanFolder = folder.replace("/", ""); // Loại bỏ dấu /
-    const mediaDir = path.join(__dirname, "..", cleanFolder);
-    const oldPath = path.join(mediaDir, oldFileName);
-    const newPath = path.join(mediaDir, newFileName);
+    // Tạo đường dẫn đến file (thư mục phải nằm trong media, tên file không được chứa dấu phân cách)
+    const relativeFolder = stripMediaPrefix(folder);
+    const oldPath = relativeFolder !== null && isSafeName(oldFileName) ? resolveInsideMedia(relativeFolder, oldFileName) : null;
+    const newPath = relativeFolder !== null && isSafeName(newFileName) ? resolveInsideMedia(relativeFolder, newFileName) : null;
+    if(!oldPath || !newPath) {
+      res.json({
+        code: "error",
+        message: "Đường dẫn không hợp lệ!"
+      })
+      return;
+    }
 
     if(!fs.existsSync(oldPath)) {
       res.json({
@@ -112,10 +132,16 @@ export const deleteFilePatch = (req: Request, res: Response) => {
       return;
     }
 
-    // Tạo đường dẫn đến file
-    const cleanFolder = folder.replace("/", ""); // Loại bỏ dấu /
-    const mediaDir = path.join(__dirname, "..", cleanFolder);
-    const filePath = path.join(mediaDir, fileName);
+    // Tạo đường dẫn đến file (thư mục phải nằm trong media, tên file không được chứa dấu phân cách)
+    const relativeFolder = stripMediaPrefix(folder);
+    const filePath = relativeFolder !== null && isSafeName(fileName) ? resolveInsideMedia(relativeFolder, fileName) : null;
+    if(!filePath) {
+      res.json({
+        code: "error",
+        message: "Đường dẫn không hợp lệ!"
+      })
+      return;
+    }
 
     if(!fs.existsSync(filePath)) {
       res.json({
@@ -145,7 +171,7 @@ export const createFolderPost = (req: Request, res: Response) => {
   try {
     const { folderName,folderPath  } = req.body;
 
-    if(!folderName && typeof folderName !== "string") {
+    if(!isSafeName(folderName)) {
       res.json({
         code: "error",
         message: "Tên thư mục không hợp lệ!"
@@ -153,8 +179,14 @@ export const createFolderPost = (req: Request, res: Response) => {
       return;
     }
 
-    const mediaRoot = path.join(__dirname, "..", "media");
-    const targetPath = path.join(mediaRoot, folderPath || "", folderName);
+    const targetPath = resolveInsideMedia(folderPath || "", folderName);
+    if(!targetPath) {
+      res.json({
+        code: "error",
+        message: "Đường dẫn không hợp lệ!"
+      })
+      return;
+    }
 
     if(fs.existsSync(targetPath)) {
       res.json({
@@ -183,10 +215,14 @@ export const listFolder = (req: Request, res: Response) => {
   try {
     // const mediaPath = path.join(__dirname, "..", "media");
     
-    let mediaPath = path.join(__dirname, "..", "media");
-
-    if(req.query.folderPath != "undefined") {
-      mediaPath = path.join(mediaPath, `${req.query.folderPath}`);
+    const folderPath = req.query.folderPath;
+    const mediaPath = resolveInsideMedia(typeof folderPath === "string" && folderPath !== "undefined" ? folderPath : "");
+    if(!mediaPath) {
+      res.json({
+        code: "error",
+        message: "Đường dẫn không hợp lệ!"
+      })
+      return;
     }
     // Đọc danh sách file/thư mục trong media
     const items = fs.readdirSync(mediaPath);
@@ -237,16 +273,16 @@ export const deleteFolderPatch = (req: Request, res: Response) => {
       return;
     }
 
-    if(folderPath == "media" || folderPath == "/media") {
+    // Tạo đường dẫn đến folder (phải nằm trong media và không phải chính thư mục media)
+    const relativeFolder = stripMediaPrefix(folderPath);
+    const folderDir = relativeFolder ? resolveInsideMedia(relativeFolder) : null;
+    if(!folderDir || folderDir === mediaRoot) {
       res.json({
         code: "error",
         message: "Không được phép xóa thư mục này!"
       })
       return;
     }
-
-    // Tạo đường dẫn đến folder
-    const folderDir = path.join(__dirname, "..", folderPath);
 
     if(!fs.existsSync(folderDir)) {
       res.json({
