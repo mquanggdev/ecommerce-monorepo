@@ -67,6 +67,9 @@ export const chatSocket = async (io: Server, socket: Socket, listAdminOnline: an
     });
   }
 
+  // Không tìm thấy phòng (vd: admin gửi roomId sai hoặc không phải phòng của mình) thì dừng
+  if(!chatRoom) return;
+
   // Vào phòng chat
   socket.join(chatRoom.id);
   
@@ -123,6 +126,7 @@ export const chatSocket = async (io: Server, socket: Socket, listAdminOnline: an
 
   // Lắng nghe sự kiện ADMIN_TYPING
   socket.on("ADMIN_TYPING", (data) => {
+    if(account.role !== "admin") return; // Chỉ admin mới được phát sự kiện này
     io.to(chatRoom.id).emit("SERVER_SEND_ADMIN_TYPING", data);
   });
   
