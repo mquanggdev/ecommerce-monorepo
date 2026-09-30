@@ -178,6 +178,7 @@ Hiện tại lỗi vẫn trả HTTP 200. **Không tự đổi status code** — 
   3E  Đơn hàng (2): coupon + điểm + total
        ↓
   3F  Tách order.service.ts       ← phải sau 3D, 3E
+  3G  Cập nhật dependency        (độc lập, làm lúc nào cũng được trong Đợt 1)
 
 ĐỢT 2 — BẢO MẬT & ỔN ĐỊNH
   4A file-manager path safety · 4B RBAC định nghĩa quyền
@@ -255,6 +256,32 @@ Hoàn tất việc chuyển `domainCDN` → `domainPublic` (48 vị trí / 28 fi
 Sau khi 3D/3E làm cho logic đúng, tách phần nghiệp vụ (~250 dòng trong `createPost`) ra `services/order.service.ts`. Controller chỉ còn: đọc request → gọi service → trả response.
 
 **Không** làm refactor toàn bộ sang `src/modules/`. Chỉ tách 1 service này.
+
+### 3G — Cập nhật dependency có lỗ hổng *(brief sẽ viết sau)*
+
+> Phát sinh sau batch 2B, từ phát hiện của CODEX và được Claude kiểm chứng sâu thêm.
+
+**Vấn đề:** `npm audit` báo **20 lỗ hổng ở ecommerce** (15 high) và **6 ở file-manager** (4 high). Phần lớn không phải rác — nhiều cái nằm thẳng trong đường đi của request công khai:
+
+| Gói | Lỗ hổng | Vì sao liên quan trực tiếp |
+|---|---|---|
+| `multer` <2.2.0 | DoS qua tên field lồng sâu (HIGH 7.5) | Dùng ở **mọi** endpoint upload |
+| `form-data` <4.0.6 | CRLF injection qua **tên file chưa escape** (HIGH 7.5) | Dùng để chuyển file sang file-manager, mà **tên file do người dùng đặt** |
+| `engine.io` <6.6.7 | Vắt cạn kết nối polling (HIGH 7.5) | Socket.IO chat mở công khai |
+| `socket.io-parser` <4.2.7 | Vắt cạn bộ nhớ (HIGH 7.5) | Như trên |
+| `axios` <1.15.1 | Bypass xác thực qua prototype pollution | Dùng gọi VNPay/ZaloPay/GoShip |
+| `nodemailer` <=8.0.8 | CRLF injection vào header mail | Gửi OTP với email người dùng nhập |
+| `qs` (file-manager) | DoS | `qs` cũng được dùng ở `order.controller` cho VNPay |
+
+Nhóm còn lại (`extract-zip`, `basic-ftp`, `ip-address`) là phụ thuộc bắc cầu của Puppeteer, rủi ro thực tế thấp.
+
+**Hướng xử lý:**
+- Chạy `npm audit fix` (đã kiểm chứng: **không cần `--force`**) ở cả hai service.
+- **KHÔNG dùng `npm audit fix --force`** — sẽ nâng major version và làm vỡ code.
+- Sau khi cập nhật, bắt buộc kiểm chứng thủ công 4 luồng đụng đến gói vừa nâng: upload file trong admin, gửi file trong chat, đặt hàng (axios → GoShip), gửi OTP quên mật khẩu.
+- Commit cả `package.json` và `package-lock.json`.
+
+**Được sửa:** `project-ecommerce-t8-25/package.json` + `package-lock.json`, `file-manager/package.json` + `package-lock.json`.
 
 ---
 
