@@ -9,7 +9,6 @@ import axios from 'axios';
 import Order from '../../models/order.model';
 import { domainCDN } from '../../configs/variable.config';
 import Review from '../../models/review.model';
-import Product from '../../models/product.model';
 
 export const dashboard = async (req: Request, res: Response) => {
   const userId = res.locals.accountUser.id;
@@ -449,6 +448,7 @@ export const orderReview = async (req: Request, res: Response) => {
     const orderDetail: any = await Order.findOne({
       _id: orderId,
       userId: userId,
+      orderStatus: "completed", // Chỉ đánh giá được đơn đã giao thành công
       deleted: false
     });
 
@@ -486,6 +486,7 @@ export const orderReviewPost = async (req: Request, res: Response) => {
     const orderDetail: any = await Order.findOne({
       _id: orderId,
       userId: userId,
+      orderStatus: "completed", // Chỉ đánh giá được đơn đã giao thành công
       deleted: false
     });
 
@@ -581,20 +582,8 @@ export const orderReviewPost = async (req: Request, res: Response) => {
       comment: comment,
       images: imageLinks
     });
-    await newReview.save();// Cập nhật đánh giá cho sản phẩm
-    
-    const product = await Product.findOne({
-      _id: productId,
-      deleted: false
-    });
-    if(product) {
-      const newRatingCount = product.ratingCount + 1;
-      const newRatingAvg = ((product.ratingAvg * product.ratingCount) + parseInt(rating)) / newRatingCount;
-      product.ratingAvg = newRatingAvg;
-      product.ratingCount = newRatingCount;
-      await product.save();
-    }
-    // Hết Cập nhật đánh giá cho sản phẩm
+    await newReview.save();
+    // Điểm trung bình của sản phẩm chỉ được tính khi admin duyệt đánh giá (xem controllers/admin/review.controller.ts)
 
 
     res.json({
