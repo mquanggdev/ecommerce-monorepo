@@ -96,6 +96,146 @@ export const permissionList = [
     id: "file-manager",
     name: "Quản lý file"
   },
+  // sản phẩm
+  {
+    id: "product-list",
+    name: "Danh sách sản phẩm"
+  },
+  {
+    id: "product-create",
+    name: "Tạo sản phẩm"
+  },
+  {
+    id: "product-edit",
+    name: "Sửa sản phẩm"
+  },
+  {
+    id: "product-delete",
+    name: "Xóa sản phẩm"
+  },
+  {
+    id: "product-export",
+    name: "Xuất CSV sản phẩm"
+  },
+  {
+    id: "product-import",
+    name: "Nhập CSV sản phẩm"
+  },
+  {
+    id: "product-category",
+    name: "Danh mục sản phẩm"
+  },
+  {
+    id: "product-category-create",
+    name: "Tạo danh mục sản phẩm"
+  },
+  {
+    id: "product-category-edit",
+    name: "Sửa danh mục sản phẩm"
+  },
+  {
+    id: "product-category-delete",
+    name: "Xóa danh mục sản phẩm"
+  },
+  {
+    id: "product-attribute",
+    name: "Thuộc tính sản phẩm"
+  },
+  {
+    id: "product-attribute-create",
+    name: "Tạo thuộc tính sản phẩm"
+  },
+  {
+    id: "product-attribute-edit",
+    name: "Sửa thuộc tính sản phẩm"
+  },
+  {
+    id: "product-attribute-delete",
+    name: "Xóa thuộc tính sản phẩm"
+  },
+  // mã giảm giá
+  {
+    id: "coupon-list",
+    name: "Danh sách mã giảm giá"
+  },
+  {
+    id: "coupon-create",
+    name: "Tạo mã giảm giá"
+  },
+  {
+    id: "coupon-edit",
+    name: "Sửa mã giảm giá"
+  },
+  {
+    id: "coupon-delete",
+    name: "Xóa mã giảm giá"
+  },
+  // đơn hàng
+  {
+    id: "order-list",
+    name: "Danh sách đơn hàng"
+  },
+  {
+    id: "order-edit",
+    name: "Sửa đơn hàng"
+  },
+  {
+    id: "order-export",
+    name: "Xuất CSV đơn hàng"
+  },
+  // đánh giá
+  {
+    id: "review-list",
+    name: "Danh sách đánh giá"
+  },
+  {
+    id: "review-edit",
+    name: "Duyệt đánh giá"
+  },
+  // tài khoản người dùng
+  {
+    id: "account-user-list",
+    name: "Danh sách tài khoản người dùng"
+  },
+  // giao diện
+  {
+    id: "block-list",
+    name: "Danh sách block"
+  },
+  {
+    id: "block-create",
+    name: "Tạo block"
+  },
+  {
+    id: "block-edit",
+    name: "Sửa block"
+  },
+  {
+    id: "block-delete",
+    name: "Xóa block"
+  },
+  {
+    id: "template-list",
+    name: "Danh sách template"
+  },
+  {
+    id: "template-create",
+    name: "Tạo template"
+  },
+  {
+    id: "template-edit",
+    name: "Sửa template"
+  },
+  // tin nhắn
+  {
+    id: "chat",
+    name: "Tin nhắn khách hàng"
+  },
+  // cài đặt
+  {
+    id: "setting",
+    name: "Cài đặt hệ thống (API, cấu hình chung)"
+  },
 ];
 
 

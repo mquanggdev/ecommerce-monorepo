@@ -31,7 +31,7 @@ router.patch(
   accountAdminController.editPatch
 );
 
-router.patch('/delete/:id',checkPermission("account-admin-edit"), accountAdminController.deletePatch);
+router.patch('/delete/:id',checkPermission("account-admin-delete"), accountAdminController.deletePatch);
 
 router.get('/change-password/:id',checkPermission("account-admin-change-password"), accountAdminController.changePassword);
 
