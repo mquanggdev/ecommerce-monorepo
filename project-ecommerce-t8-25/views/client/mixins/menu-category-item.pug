@@ -24,6 +24,6 @@ mixin renderCategory(items, level = 0)
             +renderCategory(item.children, level+1)
     if(level == 0)
       li(class="all_category")
-        a(href="#")
+        a(href="/product/category")
           | Xem Tất Cả
           i.far.fa-arrow-right

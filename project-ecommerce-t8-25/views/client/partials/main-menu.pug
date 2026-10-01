@@ -29,12 +29,12 @@ nav.d-none.d-lg-block(class="main_menu_2 main_menu")
               a(href="/")
                 | Trang Chủ
             li
-              a(href="#")
+              a(href="/product/category")
                 | Sản Phẩm
                 i.fas.fa-chevron-down
               ul(class="menu_droapdown")
                 each item in categoryProductList
-                  if (item.status)
+                  if (item.status == "active")
                     li
                       a(href=`/product/category/${item.slug}`) #{item.name}
             li
@@ -43,7 +43,7 @@ nav.d-none.d-lg-block(class="main_menu_2 main_menu")
                 i.fas.fa-chevron-down
               ul(class="menu_droapdown")
                 each item in categoryArticleList
-                  if (item.status)
+                  if (item.status == "active")
                     li
                       a(href=`/article/category/${item.slug}`) #{item.name}
           ul(class="menu_icon")
