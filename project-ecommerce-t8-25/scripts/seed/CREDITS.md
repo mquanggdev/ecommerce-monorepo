@@ -1,6 +1,8 @@
 # Nguồn ảnh của dữ liệu mẫu
 
-Toàn bộ ảnh trong `file-manager/media/seed/` và 4 banner trong `public/client/assets/images/seed/` lấy từ [Unsplash](https://unsplash.com), theo [Giấy phép Unsplash](https://unsplash.com/license): được tải về, sao chép, chỉnh sửa và sử dụng miễn phí, kể cả cho mục đích thương mại, không bắt buộc xin phép hay ghi công. Không ảnh nào thuộc gói trả phí Unsplash+.
+Toàn bộ ảnh trong `file-manager/media/seed/` lấy từ [Unsplash](https://unsplash.com), theo [Giấy phép Unsplash](https://unsplash.com/license): được tải về, sao chép, chỉnh sửa và sử dụng miễn phí, kể cả cho mục đích thương mại, không bắt buộc xin phép hay ghi công. Không ảnh nào thuộc gói trả phí Unsplash+.
+
+Các ảnh trong `public/client/assets/images/seed/` (banner trang chủ, ảnh các khối trang chủ, ảnh trang đăng nhập/đăng ký, quảng cáo cột bài viết) được cắt ghép từ chính các ảnh sản phẩm trong danh sách dưới đây; giấy phép Unsplash cho phép chỉnh sửa như vậy.
 
 Giấy phép này **không** bao gồm quyền đối với nhãn hiệu hay hình ảnh cá nhân của người xuất hiện trong ảnh. Vì vậy các ảnh có logo hoặc nhãn hiệu đọc được đã bị loại khi chọn ảnh. Nếu đưa cửa hàng vào kinh doanh thật, hãy thay bằng ảnh sản phẩm tự chụp.
 

@@ -3,8 +3,9 @@
   ========================
     SUBSCRIPTION 2 START
     ==========================
+//- Dữ liệu: blockData (ảnh nền, tiêu đề, mô tả)
 section(
-  style="background: url(/client/assets/images/subscribe_2_bg.jpg);" 
+  style=`background: url(${blockData.background});`
   class="subscription_2 mt_50 xs_mt_60"
   )
   .container
@@ -12,19 +13,14 @@ section(
       .col-xxl-6.col-lg-8.wow.fadeInUp
         div(class="subscription_2_text")
           h2
-            | Get Upto
-            span 70%
-            | Off Discount Coupon
-          p by Subscribe our Newsletter
-          form(action="#")
-            input(
-              placeholder="Your email" 
-              type="text"
-              )
-            button(
-              class="common_btn" 
-              type="submit"
-              ) Subscribe
+            | #{blockData.title.normal1}
+            span #{blockData.title.highlight}
+            | #{blockData.title.normal2}
+          p #{blockData.description}
+          a(
+            href=blockData.button.link
+            class="common_btn"
+            ) #{blockData.button.text}
 //
   ========================
     SUBSCRIPTION 2 END

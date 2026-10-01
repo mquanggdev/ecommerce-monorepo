@@ -92,7 +92,7 @@ export const PRODUCTS: SeedProduct[] = [
   {
     name: "Áo thun cotton compact chống nhăn", category: "ao-thun-nam", priceOld: 279000, priceNew: 229000,
     sizes: "top", colors: ["Xanh navy", "Xanh rêu", "Đỏ đô"],
-    images: ["photo-1716541424893-734612ddcabb", "photo-1562157873-818bc0726f68", "photo-1523381294911-8d3cead13475"],
+    images: ["photo-1562157873-818bc0726f68", "photo-1523381294911-8d3cead13475"],
     description: "Sợi cotton compact bề mặt mịn, ít xù lông, hợp với người cần áo thun mặc đi làm.",
     material: "Cotton compact 95%, spandex 5%", fit: "Slim fit, ôm nhẹ",
     features: ["Bề mặt vải mịn, hạn chế xù sau nhiều lần giặt", "Co giãn 4 chiều, cử động dễ", "Màu nhuộm hoạt tính, lâu phai"],

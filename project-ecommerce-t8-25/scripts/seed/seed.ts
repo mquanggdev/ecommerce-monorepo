@@ -227,7 +227,13 @@ const seedMedia = async () => {
     );
     count++;
   }
-  console.log(`Bản ghi media: ${count}`);
+  // Xóa bản ghi của ảnh mẫu đã bị gỡ khỏi dữ liệu mẫu
+  const images = listSeedImages();
+  const removed = await Media.deleteMany({
+    folder: { $in: [...new Set(images.map(image => image.folder))] },
+    filename: { $nin: images.map(image => image.filename) },
+  });
+  console.log(`Bản ghi media: ${count}${removed.deletedCount ? ` (gỡ ${removed.deletedCount} bản ghi cũ)` : ""}`);
 };
 
 // Xóa mềm mọi thứ không thuộc dữ liệu mẫu
@@ -250,6 +256,7 @@ const seedHome = async () => {
   if (!template) { console.log("Không có template trang chủ, bỏ qua --home"); return; }
   const blocks: any[] = await Block.find({ _id: { $in: template.blocks.map((block: any) => block.blockId) } }).lean();
   const image = (name: string) => `/client/assets/images/${name}`;
+  const shopLink = "/product/category";
   const byCategory = (slug: string, by: string, limit = 10) => ({ type: "product", category: [slug], limit, sort: { by, type: "desc" } });
 
   const dataByFile: Record<string, any> = {
@@ -291,6 +298,35 @@ const seedHome = async () => {
         { key: "3", label: "Áo khoác & giữ ấm", getByCategory: byCategory("ao-khoac-giu-am-nam", "position") },
         { key: "4", label: "Phụ kiện", getByCategory: byCategory("phu-kien-nam", "position") },
       ],
+    },
+    "best_selling_product_2.pug": {
+      title: { normal1: "Sản phẩm ", highlight: "bán chạy", normal2: "" }, viewAll: "Xem tất cả", linkViewAll: "/product/category?sort=position-desc",
+      banner: { image: image("seed/block-bestsell.jpg"), title: "Quần jean nam giảm đến 20%", subtitle: "Chỉ từ 399.000đ", button: { text: "Mua ngay", link: "/product/category/quan-jean-nam" } },
+      getByCategory: { type: "product", category: [], limit: 3, sort: { by: "view", type: "desc" } },
+    },
+    "favourite_product_2.pug": {
+      title: { normal1: "Được ", highlight: "yêu thích", normal2: " nhất" },
+      banner: { image: image("seed/block-favourite.jpg"), title: "Polo cho ngày hè", highlight: "Giảm đến 25%", subtitle: "Số lượng có hạn", button: { text: "Mua ngay", link: "/product/category/ao-polo-nam" } },
+      getByCategory: { type: "product", category: ["ao-nam", "ao-khoac-giu-am-nam"], limit: 8, sort: { by: "view", type: "desc" } },
+    },
+    "new_arrival_2.pug": {
+      title: { normal1: "Hàng ", highlight: "mới về", normal2: "" }, viewAll: "Xem tất cả", linkViewAll: "/product/category?sort=createdAt-desc",
+      getByCategory: { type: "product", category: [], limit: 4, sort: { by: "createdAt", type: "desc" } },
+    },
+    "special_product_2.pug": {
+      title: { normal1: "Ưu đãi ", highlight: "đặc biệt", normal2: "" }, viewAll: "Xem tất cả", linkViewAll: `/product/category/${FLASH_SALE_SLUG}`,
+      banner: { image: image("seed/block-special.jpg"), title: "Áo khoác denim cho mọi mùa", subtitle: "Bền, càng mặc càng đẹp", button: { text: "Mua ngay", link: "/product/category/ao-khoac-nam" } },
+      getByCategory: { type: "product", category: [], limit: 6, sort: { by: "discount", type: "desc" } },
+    },
+    "subscription_2.pug": {
+      background: image("seed/block-subscribe.jpg"),
+      title: { normal1: "Giảm đến ", highlight: "30%", normal2: " cho đơn hàng đầu tiên" },
+      description: "Tạo tài khoản để tích điểm và nhận ưu đãi dành riêng cho thành viên",
+      button: { text: "Đăng ký ngay", link: "/auth/register" },
+    },
+    "brand_2.pug": {
+      title: { normal: "Thương hiệu ", highlight: "đối tác" }, viewAll: "Xem sản phẩm", linkViewAll: shopLink,
+      brands: [1, 2, 3, 4, 5].map(index => ({ name: `Thương hiệu ${index}`, image: image(`brand${index}.png`), link: shopLink })),
     },
     "blog_2.pug": {
       title: { normal1: "Bài viết ", highlight: "thời trang", normal2: " nam" }, viewAll: "Xem tất cả", linkViewAll: "/article/category/phoi-do",
