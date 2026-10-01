@@ -91,10 +91,9 @@ ssh-keyscan -H <IP VPS>
 | Tên | Giá trị |
 |---|---|
 | `VPS_HOST` | IP VPS |
-| `VPS_USER` | `deploy` |
 | `VPS_PORT` | (không bắt buộc, mặc định 22) |
 | `VPS_SSH_KEY` | toàn bộ nội dung `~/.ssh/questa_deploy` (mở bằng Notepad, Ctrl+A, Ctrl+C). Log deploy in fingerprint để đối chiếu với `ssh-keygen -lf questa_deploy.pub` |
-| `VPS_SSH_KNOWN_HOSTS` | kết quả `ssh-keyscan -H <IP VPS>` |
+| `VPS_SSH_KNOWN_HOSTS` | kết quả `ssh-keyscan -H <IP VPS>` chạy **trên VPS** (ssh-keyscan của Windows lỗi `unsupported KEX method` với OpenSSH mới) |
 | `ECOMMERCE_ENV` | toàn bộ nội dung `deploy/env/ecommerce.env` |
 | `FILE_MANAGER_ENV` | toàn bộ nội dung `deploy/env/file-manager.env` |
 
