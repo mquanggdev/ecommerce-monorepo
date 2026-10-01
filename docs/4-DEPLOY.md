@@ -84,6 +84,7 @@ ssh-keyscan -H <IP VPS>
 |---|---|
 | `DOMAIN` | `quangtm.site` |
 | `LETSENCRYPT_EMAIL` | email nhận thông báo chứng chỉ |
+| `VPS_USER` | `deploy` (để ở Variables, không phải Secrets: tránh GitHub che mọi chữ "deploy" trong log) |
 
 **Secrets**:
 
@@ -92,7 +93,7 @@ ssh-keyscan -H <IP VPS>
 | `VPS_HOST` | IP VPS |
 | `VPS_USER` | `deploy` |
 | `VPS_PORT` | (không bắt buộc, mặc định 22) |
-| `VPS_SSH_KEY` | toàn bộ nội dung `~/.ssh/questa_deploy` |
+| `VPS_SSH_KEY` | toàn bộ nội dung `~/.ssh/questa_deploy` (mở bằng Notepad, Ctrl+A, Ctrl+C). Log deploy in fingerprint để đối chiếu với `ssh-keygen -lf questa_deploy.pub` |
 | `VPS_SSH_KNOWN_HOSTS` | kết quả `ssh-keyscan -H <IP VPS>` |
 | `ECOMMERCE_ENV` | toàn bộ nội dung `deploy/env/ecommerce.env` |
 | `FILE_MANAGER_ENV` | toàn bộ nội dung `deploy/env/file-manager.env` |

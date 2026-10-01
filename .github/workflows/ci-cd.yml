@@ -128,7 +128,8 @@ jobs:
       cancel-in-progress: false
     env:
       APP_DIR: /opt/questa
-      SSH_TARGET: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+      # VPS_USER không phải bí mật: nên đặt ở Variables (để ở Secrets thì GitHub che mọi chữ trùng giá trị trong log)
+      SSH_USER: ${{ vars.VPS_USER || secrets.VPS_USER }}
       SSH_PORT: ${{ secrets.VPS_PORT || '22' }}
     steps:
       - uses: actions/checkout@v4
@@ -141,12 +142,13 @@ jobs:
           HAS_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS != '' }}
           HAS_ECOMMERCE_ENV: ${{ secrets.ECOMMERCE_ENV != '' }}
           HAS_FILE_MANAGER_ENV: ${{ secrets.FILE_MANAGER_ENV != '' }}
+          HAS_HOST: ${{ secrets.VPS_HOST != '' }}
         run: |
           missing=0
-          for name in DOMAIN LETSENCRYPT_EMAIL; do
-            [ -n "${!name}" ] || { echo "::error::Thiếu biến (Variables) $name"; missing=1; }
+          for name in DOMAIN LETSENCRYPT_EMAIL SSH_USER; do
+            [ -n "${!name}" ] || { echo "::error::Thiếu biến $name (VPS_USER đặt ở Variables hoặc Secrets)"; missing=1; }
           done
-          for name in HAS_KEY HAS_KNOWN_HOSTS HAS_ECOMMERCE_ENV HAS_FILE_MANAGER_ENV; do
+          for name in HAS_HOST HAS_KEY HAS_KNOWN_HOSTS HAS_ECOMMERCE_ENV HAS_FILE_MANAGER_ENV; do
             [ "${!name}" = "true" ] || { echo "::error::Thiếu secret tương ứng $name"; missing=1; }
           done
           exit $missing
@@ -157,14 +159,23 @@ jobs:
           VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          # Bỏ ký tự CR/BOM có thể lẫn vào khi copy từ Windows (OpenSSH trên Linux không đọc được khóa như vậy)
+          printf '%s\n' "$VPS_SSH_KEY" | sed -e 's/\r$//' -e '1s/^\xEF\xBB\xBF//' > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
-          printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" | sed -e 's/\r$//' > ~/.ssh/known_hosts
+
+          # Kiểm tra khóa trước khi SSH: sai thì báo rõ thay vì "Permission denied" khó hiểu
+          if ! ssh-keygen -y -P "" -f ~/.ssh/id_deploy > /tmp/deploy_key.pub 2> /tmp/deploy_key.err; then
+            echo "::error::Secret VPS_SSH_KEY không đọc được ($(cat /tmp/deploy_key.err)). Dán lại TOÀN BỘ khóa riêng (file không có đuôi .pub, đủ dòng BEGIN/END), khóa không được đặt passphrase."
+            exit 1
+          fi
+          # Fingerprint của public key (không phải bí mật) để đối chiếu: ssh-keygen -lf questa_deploy.pub
+          echo "Khóa deploy: $(ssh-keygen -lf /tmp/deploy_key.pub)"
           # Chỉ kết nối tới đúng VPS đã khai báo trong known_hosts
           cat > ~/.ssh/config <<EOF
           Host vps
             HostName ${{ secrets.VPS_HOST }}
-            User ${{ secrets.VPS_USER }}
+            User $SSH_USER
             Port $SSH_PORT
             IdentityFile ~/.ssh/id_deploy
             StrictHostKeyChecking yes
