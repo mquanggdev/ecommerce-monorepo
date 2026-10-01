@@ -11,6 +11,7 @@ import Papa from 'papaparse';
 
 import { generateRandomString } from '../../helpers/generate.helper';
 import { pingGoogleSitemap } from '../../helpers/ping-google.helper';
+import { totalVariantStock } from '../../helpers/stock.helper';
 
 export const category = async (req: Request, res: Response) => {
   const find: {
@@ -303,6 +304,10 @@ export const createPost = async (req: Request, res: Response) => {
     req.body.attributes = JSON.parse(req.body.attributes);
 
     req.body.variants = JSON.parse(req.body.variants);
+    // Có biến thể thì kho chung = tổng kho các biến thể đang bật (không dùng số nhập tay)
+    if(req.body.variants.length > 0) {
+      req.body.stock = totalVariantStock(req.body.variants);
+    }
     
     req.body.boughtTogether = JSON.parse(req.body.boughtTogether);
 
@@ -529,6 +534,10 @@ export const editPatch = async (req: Request, res: Response) => {
     req.body.attributes = JSON.parse(req.body.attributes);
 
     req.body.variants = JSON.parse(req.body.variants);
+    // Có biến thể thì kho chung = tổng kho các biến thể đang bật (không dùng số nhập tay)
+    if(req.body.variants.length > 0) {
+      req.body.stock = totalVariantStock(req.body.variants);
+    }
 
     req.body.tags = JSON.parse(req.body.tags);
     
@@ -786,6 +795,9 @@ export const importCSVPost = async (req: Request, res: Response) => {
       item.stock = item.stock ? parseInt(item.stock) : 0;
       item.attributes = item.attributes ? JSON.parse(item.attributes) : [];
       item.variants = item.variants ? JSON.parse(item.variants) : [];
+      if(item.variants.length > 0) {
+        item.stock = totalVariantStock(item.variants);
+      }
       item.images = item.images ? JSON.parse(item.images) : [];
       item.view = item.view ? parseInt(item.view) : 0;
       item.tags = item.tags ? JSON.parse(item.tags) : [];
