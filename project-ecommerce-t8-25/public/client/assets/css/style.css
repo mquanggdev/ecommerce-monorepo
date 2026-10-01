@@ -420,7 +420,7 @@ button {
 }
 
 .page_banner_overlay {
-    background: rgb(7 28 31 / 38%);
+    background: rgb(8 24 48 / 20%);
     padding: 50px 0px 52px 0px;
 }
 
@@ -646,6 +646,13 @@ header .header_logo_area {
 
 header .header_logo {
     width: 130px;
+}
+
+/* Các cột header (form, khung flex) không ăn theo line-height nên bị dồn sát mép trên:
+   cho container/row cao bằng header để .align-items-center căn giữa theo chiều dọc */
+header > .container,
+header > .container > .row {
+    height: 100%;
 }
 
 /* Logo Questa: biểu tượng SVG + chữ (dùng ở header, menu cố định, footer) */
@@ -8495,7 +8502,7 @@ footer {
 }
 
 .details_qty_input button:hover {
-    background: var(--colorGreen);
+    background: var(--themeColoeOne);
     color: var(--colorWhite);
 }
 
@@ -9836,7 +9843,7 @@ footer {
     position: absolute;
     top: 5px;
     right: 5px;
-    background: var(--colorGreen) !important;
+    background: var(--themeColoeOne) !important;
     padding: 9.5px 25px;
     border-radius: 6px !important;
     -webkit-border-radius: 6px !important;
@@ -12387,7 +12394,7 @@ footer {
   position: fixed;
   bottom: 100px;
   right: 20px;
-  background: #007bff;
+  background: var(--themeColoeOne);
   color: #fff;
   width: 55px;
   height: 55px;
@@ -12423,7 +12430,7 @@ footer {
 
 /* HEADER */
 .chat-header {
-  background: #007bff;
+  background: var(--themeColoeOne);
   color: #fff;
   padding: 10px;
   display: flex;
@@ -12478,7 +12485,7 @@ footer {
 }
 
 .message.user .bubble {
-  background: #007bff;
+  background: var(--themeColoeOne);
   color: #fff;
 }
 
@@ -12508,10 +12515,13 @@ footer {
   margin-left: 8px;
   padding: 8px 12px;
   border: none;
-  background: #007bff;
+  background: var(--themeColoeOne);
   color: #fff;
   border-radius: 5px;
   cursor: pointer;
+}
+.chat-footer #chat-attach {
+  background: var(--themeColorTwo);
 }
 /* Màn hình nhỏ: khung chat vừa khít chiều ngang, không tràn ra ngoài */
 @media (max-width: 575.98px) {
@@ -12704,4 +12714,104 @@ footer {
 
 .message:hover .delete-message {
   display: flex;
+}
+
+/* ===== Trạng thái loading / lỗi dùng chung (xem main.js: setButtonLoading, htmlLoading, htmlError) ===== */
+@keyframes questa-spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn-spinner,
+.state-spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: questa-spin .7s linear infinite;
+}
+
+.btn-spinner {
+  margin-right: 8px;
+  vertical-align: -3px;
+}
+
+/* Nút đang chờ request: khóa bấm, không cho gửi lặp */
+.is-loading {
+  pointer-events: none;
+  cursor: progress;
+  opacity: .8;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Khối trạng thái chèn vào vùng nội dung vẽ bằng JS */
+.state-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.state-loading {
+  color: var(--themeColorTwo);
+  background: var(--lightBg);
+}
+
+.state-loading .state-spinner {
+  width: 20px;
+  height: 20px;
+  color: var(--themeColoeOne);
+}
+
+.state-error {
+  color: var(--colorRed);
+  background: #db44370d;
+  border: 1px dashed #db443766;
+}
+
+.state-error i {
+  font-size: 18px;
+}
+
+.state-empty {
+  color: var(--paraColor);
+  background: var(--lightBg2);
+}
+
+.state-retry {
+  padding: 5px 14px;
+  border-radius: 6px;
+  background: var(--themeColoeOne);
+  color: var(--colorWhite);
+  font-size: 13px;
+  transition: background .2s;
+}
+
+.state-retry:hover {
+  background: var(--themeColorTwo);
+}
+
+/* Vùng đã có dữ liệu cũ, đang tải lại: làm mờ và chặn bấm cho tới khi xong */
+.is-updating {
+  opacity: .5;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+
+/* Khung tóm tắt giỏ hàng: dòng trạng thái không cần nền trắng của item */
+.cart_page_summary ul li.state-row {
+  display: block;
+  padding: 0;
+  background: transparent;
 }

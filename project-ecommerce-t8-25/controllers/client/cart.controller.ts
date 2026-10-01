@@ -6,6 +6,57 @@ import { getInfoAddress } from '../../helpers/location.helper';
 import { pointConfig } from '../../configs/variable.config';
 import { getApiShipping } from '../../configs/setting.config';
 
+// Lấy các phương án vận chuyển từ GoShip cho địa chỉ người nhận (gọi dịch vụ bên ngoài, có thể lỗi/chậm)
+const getShippingOptions = async (userAddress: any, cartDetail: any[]) => {
+  // Tọa độ của người gửi
+  const shopLocation = {
+    lat: 10.8037448,
+    lng: 106.6617749
+  };
+
+  const shopInfoAddress = await getInfoAddress(shopLocation.lat, shopLocation.lng);
+
+  const userInfoAddress = await getInfoAddress(userAddress.latitude, userAddress.longitude);
+
+  // Tính trọng lượng đơn hàng
+  const totalWeight = cartDetail.reduce((total, item) => total + item.quantity * 500, 0); // mỗi 1 sản phẩm nặng 500gram
+
+  const dataGoShip = {
+    shipment: {
+      address_from: {
+        city: shopInfoAddress.city, // Lấy từ API: /cities
+        district: shopInfoAddress.district, // Lấy từ API: /districs
+        ward: shopInfoAddress.ward // Lấy từ API: /wards
+      },
+      address_to: {
+        city: userInfoAddress.city,
+        district: userInfoAddress.district,
+        ward: userInfoAddress.ward
+      },
+      parcel: {
+        cod: "0", // Tiền thu hộ
+        amout: "0", // Giá trị khai giá
+        weight: totalWeight,
+        width: "10",
+        height: "10",
+        length: "10"
+      }
+    }
+  };
+
+  const apiShipping = await getApiShipping();
+
+  const goshipRes = await axios.post("https://sandbox.goship.io/api/v2/rates", dataGoShip, {
+    headers: {
+      Authorization: `Bearer ${apiShipping.tokenGoShip}`,
+      "Content-Type": "application/json"
+    },
+    timeout: 10000
+  });
+
+  return goshipRes.data.data;
+};
+
 export const list = async (req: Request, res: Response) => {
   try {
     const { cart, userAddress } = req.body;
@@ -47,55 +98,16 @@ export const list = async (req: Request, res: Response) => {
     }
     // Hết Lấy chi tiết sản phẩm
 
-    // Tính phí ship
+    // Tính phí ship (gọi dịch vụ bên ngoài: lỗi ở đây không được làm hỏng cả giỏ hàng)
     let shippingOptions = null;
+    let shippingError = "";
     if(userAddress) {
-      // Tọa độ của người gửi
-      const shopLocation = {
-        lat: 10.8037448,
-        lng: 106.6617749
-      };
-
-      const shopInfoAddress = await getInfoAddress(shopLocation.lat, shopLocation.lng);
-      
-      const userInfoAddress = await getInfoAddress(userAddress.latitude, userAddress.longitude);
-
-      // Tính trọng lượng đơn hàng
-      const totalWeight = cartDetail.reduce((total, item) => total + item.quantity * 500, 0); // mỗi 1 sản phẩm nặng 500gram
-
-      const dataGoShip = {
-        shipment: {
-          address_from: {
-            city: shopInfoAddress.city, // Lấy từ API: /cities
-            district: shopInfoAddress.district, // Lấy từ API: /districs
-            ward: shopInfoAddress.ward // Lấy từ API: /wards
-          },
-          address_to: {
-            city: userInfoAddress.city,
-            district: userInfoAddress.district,
-            ward: userInfoAddress.ward
-          },
-          parcel: {
-            cod: "0", // Tiền thu hộ
-            amout: "0", // Giá trị khai giá
-            weight: totalWeight,
-            width: "10",
-            height: "10",
-            length: "10"
-          }
-        }
-      };
-
-      const apiShipping = await getApiShipping();
-
-      const goshipRes = await axios.post("https://sandbox.goship.io/api/v2/rates", dataGoShip, {
-        headers: {
-          Authorization: `Bearer ${apiShipping.tokenGoShip}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      shippingOptions = goshipRes.data.data;
+      try {
+        shippingOptions = await getShippingOptions(userAddress, cartDetail);
+      } catch (error: any) {
+        console.error("Lỗi tính phí vận chuyển:", error?.response?.status || "", error?.message);
+        shippingError = "Không lấy được phí vận chuyển cho địa chỉ này, vui lòng thử lại hoặc chọn địa chỉ khác!";
+      }
     }
     // Hết Tính phí ship
 
@@ -114,6 +126,7 @@ export const list = async (req: Request, res: Response) => {
       message: "Thành công!",
       cart: cartDetail,
       shippingOptions: shippingOptions,
+      shippingError: shippingError,
       point: point
     })
   } catch (error) {

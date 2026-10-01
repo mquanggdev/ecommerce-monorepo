@@ -61,6 +61,8 @@ if(chatButton) {
   const chatInput = document.querySelector("#chat-input");
   const chatSend = document.querySelector("#chat-send");
   chatSend.addEventListener("click", async () => {
+    if (isButtonLoading(chatSend)) return;
+
     // Gửi files lên backend để lấy link file
     let fileUrls = [];
     if (selectedFiles.length > 0) {
@@ -69,14 +71,23 @@ if(chatButton) {
         formData.append("files", file);
       });
 
-      const res = await fetch("/chat/upload", {
-        method: "POST",
-        body: formData
-      });
-      const data = await res.json();
-
-      if (data.code === "success") {
+      // Upload có thể lâu: khóa nút gửi, chỉ hiện vòng xoay cho vừa nút nhỏ
+      setButtonLoading(chatSend, true, "");
+      try {
+        const data = await requestJson("/chat/upload", {
+          method: "POST",
+          body: formData
+        });
+        if (data.code !== "success") {
+          throw new Error(data.message || "Tải file lên thất bại, vui lòng thử lại!");
+        }
         fileUrls = data.fileUrls;
+      } catch (error) {
+        // Giữ lại nội dung và file đã chọn để người dùng gửi lại
+        notyf.error(error.message);
+        return;
+      } finally {
+        setButtonLoading(chatSend, false);
       }
     }
 
@@ -95,6 +106,10 @@ if(chatButton) {
 
   // Hàm hiển thị tin nhăn
   const appendMessage = (item, isPrepend = false) => {
+    // Có tin nhắn thì bỏ khối trạng thái (đang tải / chưa có tin nhắn)
+    const chatState = chatBody.querySelector(".chat-state");
+    if (chatState) chatState.remove();
+
     const elementMessage = document.createElement("div");
     elementMessage.classList.add("message");
     elementMessage.classList.add(item.senderRole);
@@ -158,13 +173,34 @@ if(chatButton) {
     }
   });
 
+  // Khối trạng thái trong khung chat (bị xóa khi có tin nhắn đầu tiên)
+  const showChatState = (html) => {
+    const chatState = chatBody.querySelector(".chat-state") || document.createElement("div");
+    chatState.className = "chat-state";
+    chatState.innerHTML = html;
+    chatBody.prepend(chatState);
+    return chatState;
+  }
+
   // Load 20 tin nhắn gần nhất
   const loadInitialMessages = async () => {
-    const res = await fetch(`/chat/messages?limit=20`);
-    const data = await res.json();
-    
-    for (const item of data.messages) {
-      appendMessage(item);
+    showChatState(htmlLoading("Đang tải tin nhắn..."));
+    try {
+      const data = await requestJson(`/chat/messages?limit=20`);
+      if (data.code === "error") {
+        throw new Error(data.message);
+      }
+
+      for (const item of data.messages) {
+        appendMessage(item);
+      }
+      if (data.messages.length === 0) {
+        showChatState(htmlEmpty("Chưa có tin nhắn. Bạn cần tư vấn size hay hỏi về đơn hàng? Nhắn cho chúng tôi nhé!"));
+      }
+      chatBody.scrollTop = chatBody.scrollHeight;
+    } catch (error) {
+      const chatState = showChatState(htmlError(error.message || "Không tải được tin nhắn!"));
+      bindRetry(chatState, loadInitialMessages);
     }
   }
   loadInitialMessages();
@@ -174,32 +210,40 @@ if(chatButton) {
   let hasMore = true;
   chatBody.addEventListener("scroll", async () => {
     if (chatBody.scrollTop === 0 && !isLoading && hasMore) {
-      isLoading = true;
-
       const lastMessage = chatBody.querySelector(".message");
+      if (!lastMessage) return;
       const lastMessageId = lastMessage.getAttribute("id");
-
       if (!lastMessageId) return;
 
-      const res = await fetch(`/chat/messages?lastMessageId=${lastMessageId}&limit=20`);
-      const data = await res.json();
+      isLoading = true;
+      const elementLoadingOlder = document.createElement("div");
+      elementLoadingOlder.innerHTML = htmlLoading("Đang tải tin nhắn cũ...");
+      chatBody.prepend(elementLoadingOlder);
 
-      if (data.messages.length === 0) {
-        hasMore = false;
-      } else {
-        const oldHeight = chatBody.scrollHeight;
+      try {
+        const data = await requestJson(`/chat/messages?lastMessageId=${lastMessageId}&limit=20`);
+        elementLoadingOlder.remove();
 
-        data.messages.forEach(item => {
-          appendMessage(item, true);
-        });
+        if (!data.messages || data.messages.length === 0) {
+          hasMore = false;
+        } else {
+          const oldHeight = chatBody.scrollHeight;
 
-        const newHeight = chatBody.scrollHeight;
+          data.messages.forEach(item => {
+            appendMessage(item, true);
+          });
 
-        // Giữ nguyên vị trí scroll
-        chatBody.scrollTop = newHeight - oldHeight;
+          const newHeight = chatBody.scrollHeight;
+
+          // Giữ nguyên vị trí scroll
+          chatBody.scrollTop = newHeight - oldHeight;
+        }
+      } catch (error) {
+        elementLoadingOlder.remove();
+        notyf.error(error.message);
+      } finally {
+        isLoading = false;
       }
-
-      isLoading = false;
     }
   });
 
@@ -319,7 +363,7 @@ if(buttonRate) {
     const comment = rateContent.value.trim();
 
     if(totalStar <= 0) {
-      notyf.error("Vui lý nhập số sao đánh giá!");
+      notyf.error("Vui lòng chọn số sao đánh giá!");
       return;
     }
 
@@ -328,26 +372,18 @@ if(buttonRate) {
       comment: comment
     };
 
-    fetch(`/chat/rate`, {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(dataFinal),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if(data.code == "error") {
-          notyf.error(data.message);
-        }
+    sendWithButton(rateSubmit, `/chat/rate`, jsonOptions("POST", dataFinal), data => {
+      if(data.code == "error") {
+        notyf.error(data.message);
+      }
 
-        if(data.code == "success") {
-          notyf.success(data.message);
-          chatRate.classList.add("d-none");
-          starList.forEach(s => s.classList.remove("active"));
-          rateContent.value = "";
-        }
-      })
+      if(data.code == "success") {
+        notyf.success(data.message);
+        chatRate.classList.add("d-none");
+        starList.forEach(s => s.classList.remove("active"));
+        rateContent.value = "";
+      }
+    }, "Đang gửi...");
   });
 }
 

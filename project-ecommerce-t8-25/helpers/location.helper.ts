@@ -1,6 +1,9 @@
 import axios from "axios";
 import { getApiShipping } from "../configs/setting.config";
 
+// Dịch vụ bản đồ/vận chuyển bên ngoài có thể treo: không để người dùng chờ quá 10 giây
+const REQUEST_TIMEOUT = 10000;
+
 const normalizeAddress = async (city: string, district: string, ward: string) => {
   const apiShipping = await getApiShipping();
   
@@ -8,7 +11,8 @@ const normalizeAddress = async (city: string, district: string, ward: string) =>
   const cityRes = await axios.get("https://sandbox.goship.io/api/v2/cities", {
     headers: {
       Authorization: `Bearer ${apiShipping.tokenGoShip}`
-    }
+    },
+    timeout: REQUEST_TIMEOUT
   });
   const cityInfo = cityRes.data.data.find((item: any) => item.name == city);
 
@@ -16,7 +20,8 @@ const normalizeAddress = async (city: string, district: string, ward: string) =>
   const districtRes = await axios.get(`https://sandbox.goship.io/api/v2/cities/${cityInfo.id}/districts`, {
     headers: {
       Authorization: `Bearer ${apiShipping.tokenGoShip}`
-    }
+    },
+    timeout: REQUEST_TIMEOUT
   });
 
   const districtInfo = districtRes.data.data.find((item: any) => item.name.includes(district));
@@ -25,7 +30,8 @@ const normalizeAddress = async (city: string, district: string, ward: string) =>
   const wardRes = await axios.get(`https://sandbox.goship.io/api/v2/districts/${districtInfo.id}/wards`, {
     headers: {
       Authorization: `Bearer ${apiShipping.tokenGoShip}`
-    }
+    },
+    timeout: REQUEST_TIMEOUT
   });
 
   const wardInfo = wardRes.data.data.find((item: any) => item.name.includes(ward));
@@ -40,7 +46,9 @@ const normalizeAddress = async (city: string, district: string, ward: string) =>
 }
 
 export const getInfoAddress = async (latitude: number, longitude: number) => {
-  const geoRes = await axios.get(`https://mapapis.openmap.vn/v1/geocode/reverse?latlng=${latitude},${longitude}&apikey=${process.env.OPENMAP_KEY}`);
+  const geoRes = await axios.get(`https://mapapis.openmap.vn/v1/geocode/reverse?latlng=${latitude},${longitude}&apikey=${process.env.OPENMAP_KEY}`, {
+    timeout: REQUEST_TIMEOUT
+  });
 
   let city = "";
   let district = "";
