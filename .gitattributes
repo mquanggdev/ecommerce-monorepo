@@ -1,0 +1,5 @@
+# File chạy trên Linux (VPS, container) phải giữ xuống dòng LF, kể cả khi checkout trên Windows
+*.sh                text eol=lf
+*.conf.template     text eol=lf
+*.yml               text eol=lf
+dockerfile          text eol=lf

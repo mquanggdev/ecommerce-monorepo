@@ -5,3 +5,6 @@ node_modules/
 # Thư mục nguồn tạm khi gộp repo — xóa sau khi xong
 _src-ecommerce/
 _src-file-manager/
+
+# Biến môi trường production (bí mật) - chỉ để trên máy và trong GitHub Secrets
+deploy/env/

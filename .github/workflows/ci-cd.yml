@@ -1,0 +1,198 @@
+name: CI/CD
+
+# PR: kiểm tra code + build thử image (không đẩy, không deploy)
+# Push vào main: kiểm tra → build và đẩy image lên ghcr.io → deploy lên VPS
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch: # Cho phép bấm chạy tay (vd: deploy lại sau khi đổi secret)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # ---------------------------------------------------------
+  check:
+    name: Kiểm tra ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [ project-ecommerce-t8-25, file-manager ]
+    env:
+      # Chỉ kiểm tra/biên dịch, không cần Chrome của puppeteer
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.service }}/package-lock.json
+
+      - name: Cài dependency
+        run: npm ci
+        working-directory: ${{ matrix.service }}
+
+      - name: Kiểm tra kiểu TypeScript
+        run: npm run typecheck
+        working-directory: ${{ matrix.service }}
+
+      - name: Biên dịch
+        run: npm run build
+        working-directory: ${{ matrix.service }}
+
+  # ---------------------------------------------------------
+  image:
+    name: Image ${{ matrix.name }}
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ecommerce
+            context: project-ecommerce-t8-25
+          - name: file-manager
+            context: file-manager
+    env:
+      PUSH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tên image (ghcr.io bắt buộc chữ thường)
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.name }}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Đăng nhập ghcr.io
+        if: env.PUSH == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build${{ env.PUSH == 'true' && ' và đẩy' || ' thử' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/dockerfile
+          push: ${{ env.PUSH == 'true' }}
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  # ---------------------------------------------------------
+  deploy:
+    name: Deploy production
+    needs: image
+    # Chỉ deploy khi đã cấu hình (biến DOMAIN trong Settings → Variables); chưa dựng VPS thì bỏ qua job này
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DOMAIN != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    environment:
+      name: production
+      url: https://${{ vars.DOMAIN }}
+    # Không chạy hai lần deploy cùng lúc; lần sau chờ lần trước xong
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      APP_DIR: /opt/questa
+      SSH_TARGET: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+      SSH_PORT: ${{ secrets.VPS_PORT || '22' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Kiểm tra cấu hình
+        env:
+          DOMAIN: ${{ vars.DOMAIN }}
+          LETSENCRYPT_EMAIL: ${{ vars.LETSENCRYPT_EMAIL }}
+          HAS_KEY: ${{ secrets.VPS_SSH_KEY != '' }}
+          HAS_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS != '' }}
+          HAS_ECOMMERCE_ENV: ${{ secrets.ECOMMERCE_ENV != '' }}
+          HAS_FILE_MANAGER_ENV: ${{ secrets.FILE_MANAGER_ENV != '' }}
+        run: |
+          missing=0
+          for name in DOMAIN LETSENCRYPT_EMAIL; do
+            [ -n "${!name}" ] || { echo "::error::Thiếu biến (Variables) $name"; missing=1; }
+          done
+          for name in HAS_KEY HAS_KNOWN_HOSTS HAS_ECOMMERCE_ENV HAS_FILE_MANAGER_ENV; do
+            [ "${!name}" = "true" ] || { echo "::error::Thiếu secret tương ứng $name"; missing=1; }
+          done
+          exit $missing
+
+      - name: Chuẩn bị SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # Chỉ kết nối tới đúng VPS đã khai báo trong known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host vps
+            HostName ${{ secrets.VPS_HOST }}
+            User ${{ secrets.VPS_USER }}
+            Port $SSH_PORT
+            IdentityFile ~/.ssh/id_deploy
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Chép file deploy lên VPS
+        run: |
+          ssh vps "mkdir -p $APP_DIR/env $APP_DIR/backups"
+          scp -r deploy/docker-compose.prod.yml deploy/nginx deploy/scripts vps:$APP_DIR/
+          ssh vps "chmod +x $APP_DIR/scripts/*.sh $APP_DIR/nginx/*.sh"
+
+      - name: Ghi biến môi trường lên VPS
+        env:
+          ECOMMERCE_ENV: ${{ secrets.ECOMMERCE_ENV }}
+          FILE_MANAGER_ENV: ${{ secrets.FILE_MANAGER_ENV }}
+          DOMAIN: ${{ vars.DOMAIN }}
+          LETSENCRYPT_EMAIL: ${{ vars.LETSENCRYPT_EMAIL }}
+        run: |
+          # Bí mật đi qua stdin của SSH, không nằm trên dòng lệnh; file chỉ chủ sở hữu đọc được
+          printf '%s\n' "$ECOMMERCE_ENV" | ssh vps "umask 077 && cat > $APP_DIR/env/ecommerce.env"
+          printf '%s\n' "$FILE_MANAGER_ENV" | ssh vps "umask 077 && cat > $APP_DIR/env/file-manager.env"
+          # .env của compose: giữ lại IMAGE_TAG đang chạy để deploy.sh còn biết bản cũ mà quay về khi lỗi
+          ssh vps "cd $APP_DIR && current=\$(grep -E '^IMAGE_TAG=' .env 2>/dev/null | cut -d= -f2-) && umask 077 && cat > .env <<EOF
+          DOMAIN=$DOMAIN
+          LETSENCRYPT_EMAIL=$LETSENCRYPT_EMAIL
+          IMAGE_PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}
+          IMAGE_TAG=\${current:-latest}
+          EOF"
+
+      - name: Deploy
+        run: |
+          # Đăng nhập registry bằng token tạm của lần chạy này (hết hạn khi job xong)
+          echo "${{ secrets.GITHUB_TOKEN }}" | ssh vps "docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+          ssh vps "cd $APP_DIR && bash scripts/init-ssl.sh && bash scripts/deploy.sh ${{ github.sha }}"
+
+      - name: Đăng xuất registry trên VPS
+        if: always()
+        run: ssh vps "docker logout ghcr.io" || true
+
+      - name: Kiểm tra website từ bên ngoài
+        run: |
+          curl -fsS --retry 10 --retry-delay 6 --retry-all-errors "https://${{ vars.DOMAIN }}/healthz"
+          curl -fsS -o /dev/null -w "Trang chủ: HTTP %{http_code}\n" "https://${{ vars.DOMAIN }}/"
