@@ -871,7 +871,7 @@ Xuất hiện ở `client/cart.controller.ts` và `client/order.controller.ts`. 
 
 | # | Vấn đề | Vị trí | Mức |
 |---|---|---|---|
-| 1 | **API key OpenMap hard-code trong source** — `apikey=AIusVEFVnFWCE0ysUJ0BNZYMOhnZptij` đã nằm trong git history. Trong khi `.env` **đã có** biến `OPENMAP_KEY` nhưng không dùng. | `helpers/location.helper.ts:43` | 🔴 |
+| 1 | **API key OpenMap hard-code trong source** — `apikey=AIus…(đã che)` đã nằm trong git history. Trong khi `.env` **đã có** biến `OPENMAP_KEY` nhưng không dùng. | `helpers/location.helper.ts:43` | 🔴 |
 | 2 | **Mật khẩu SuperAdmin so sánh plaintext** từ biến môi trường | `controllers/admin/account.controller.ts:20` | 🟠 |
 | 3 | **`fileFilter` chấp nhận mọi loại file** — `cb(null, true)` vô điều kiện. Upload `.svg` chứa `<script>` rồi phục vụ qua `/media/*` → **stored XSS** | `routes/admin/file-manager.route.ts`, `file-manager/routes/file-manager.route.ts` | 🟠 |
 | 4 | **Không giới hạn dung lượng upload** ở multer → DoS bằng file khổng lồ | Cả 2 service | 🟠 |
