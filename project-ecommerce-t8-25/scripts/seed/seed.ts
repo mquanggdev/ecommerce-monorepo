@@ -189,7 +189,8 @@ const seedBlogs = async () => {
     });
   }
 
-  const admin: any = await AccountAdmin.findOne({ deleted: false, status: "active" }).select("_id").lean();
+  // Tác giả: tài khoản admin tạo sớm nhất (chủ shop)
+  const admin: any = await AccountAdmin.findOne({ deleted: false, status: "active" }).sort({ createdAt: 1 }).select("_id").lean();
   const authorId = admin ? `${admin._id}` : `${process.env.SUPER_ADMIN_ID}`;
 
   for (const [index, blog] of BLOGS.entries()) {
@@ -324,10 +325,6 @@ const seedHome = async () => {
       description: "Tạo tài khoản để tích điểm và nhận ưu đãi dành riêng cho thành viên",
       button: { text: "Đăng ký ngay", link: "/auth/register" },
     },
-    "brand_2.pug": {
-      title: { normal: "Thương hiệu ", highlight: "đối tác" }, viewAll: "Xem sản phẩm", linkViewAll: shopLink,
-      brands: [1, 2, 3, 4, 5].map(index => ({ name: `Thương hiệu ${index}`, image: image(`brand${index}.png`), link: shopLink })),
-    },
     "blog_2.pug": {
       title: { normal1: "Bài viết ", highlight: "thời trang", normal2: " nam" }, viewAll: "Xem tất cả", linkViewAll: "/article/category/phoi-do",
       getByCategory: { type: "blog", category: BLOG_CATEGORIES.map(category => category.slug), limit: 4, sort: { by: "publishAt", type: "desc" } },
@@ -341,7 +338,10 @@ const seedHome = async () => {
     await Block.updateOne({ _id: block._id }, { data });
     updated++;
   }
-  console.log(`Block trang chủ đã cập nhật: ${updated}`);
+  // Ảnh logo trong block thương hiệu của template là nhãn hiệu thật (không phải đối tác) nên tắt block này
+  const brandBlockIds = blocks.filter(block => block.fileName === "brand_2.pug").map(block => block._id);
+  await Block.updateMany({ _id: { $in: brandBlockIds } }, { status: "inactive" });
+  console.log(`Block trang chủ đã cập nhật: ${updated}, tắt block thương hiệu: ${brandBlockIds.length}`);
 };
 
 (async () => {

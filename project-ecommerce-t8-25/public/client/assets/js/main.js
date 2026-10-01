@@ -933,6 +933,27 @@ if(shopDetailsText) {
     }
   })
 
+  // Mua ngay: thêm vào giỏ rồi chuyển sang trang giỏ hàng
+  const buttonBuyNow = shopDetailsText.querySelector("[button-buy-now]");
+  buttonBuyNow.addEventListener("click", () => {
+    if(parseInt(inputQuantity.value) > 0) {
+      buttonAddCart.click();
+      window.location.href = "/cart";
+    }
+  })
+
+  // Hỏi đáp: mở khung chat
+  const buttonOpenChat = shopDetailsText.querySelector("[button-open-chat]");
+  const chatButton = document.querySelector("#chat-button");
+  const chatPopup = document.querySelector("#chat-popup");
+  if(chatButton && chatPopup) {
+    buttonOpenChat.addEventListener("click", () => {
+      if(chatPopup.classList.contains("hidden")) {
+        chatButton.click();
+      }
+    })
+  }
+
   // Thêm vào so sánh
   const buttonAddCompare = shopDetailsText.querySelector("[button-add-compare]");
   buttonAddCompare.addEventListener("click", () => {

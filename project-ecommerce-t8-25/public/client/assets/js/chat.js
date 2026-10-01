@@ -26,6 +26,11 @@ if(chatButton) {
   const chatClose = document.querySelector("#chat-close");
   const chatBody = document.querySelector("#chat-body");
   const chatCount = chatButton.querySelector(".chat-count");
+  // Chỉ hiện chấm đỏ khi có tin chưa đọc
+  const syncChatCount = () => {
+    chatCount.style.display = parseInt(chatCount.innerHTML) > 0 ? "" : "none";
+  };
+  syncChatCount();
   const chatFile = document.querySelector("#chat-file");
   const chatAttach = document.querySelector("#chat-attach");
   const chatPreview = document.querySelector("#chat-preview");
@@ -43,6 +48,7 @@ if(chatButton) {
         isOpen: true
       });
       chatCount.innerHTML = "0";
+      syncChatCount();
     }
   });
 
@@ -141,12 +147,14 @@ if(chatButton) {
     chatBody.scrollTop = chatBody.scrollHeight;
     // Nếu chat đang đóng, tăng số lượng tin nhắn chưa đọc
     if(chatPopup.classList.contains("hidden")) {
-      chatCount.innerHTML = parseInt(chatCount.innerHTML) + 1;
+      chatCount.innerHTML = (parseInt(chatCount.innerHTML) || 0) + 1;
+      syncChatCount();
     } else {
       socket.emit("CLIENT_OPEN_CHAT", {
         isOpen: true
       });
       chatCount.innerHTML = "0";
+      syncChatCount();
     }
   });
 

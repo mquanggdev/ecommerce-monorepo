@@ -3,33 +3,35 @@ include stars.pug
 mixin product-item-2(item)
   div(class="product_item_2 product_item")
     div(class="product_img")
-      img.img-fluid.w-100(
-        alt=item.name
-        src=`${domainPublic}${item.images[0]}`
-        )
+      a.d-block(href=`/product/detail/${item.slug}`)
+        img.img-fluid.w-100(
+          alt=item.name
+          src=`${domainPublic}${item.images[0]}`
+          )
       ul(class="discount_list")
         //- li.new new
         if (item.discount > 0)
           li.discount
             b -
             | #{item.discount}%
+      //- Sản phẩm có biến thể nên phải chọn màu/size ở trang chi tiết trước khi so sánh, yêu thích, thêm giỏ
       ul(class="btn_list")
         li
-          a(href="#")
+          a(href=`/product/detail/${item.slug}` title="So sánh")
             img.img-fluid(
-              alt="Compare" 
+              alt="So sánh"
               src="/client/assets/images/compare_icon_white.svg"
               )
         li
-          a(href="#")
+          a(href=`/product/detail/${item.slug}` title="Yêu thích")
             img.img-fluid(
-              alt="Love" 
+              alt="Yêu thích"
               src="/client/assets/images/love_icon_white.svg"
               )
         li
-          a(href="#")
+          a(href=`/product/detail/${item.slug}` title="Thêm vào giỏ")
             img.img-fluid(
-              alt="Love" 
+              alt="Thêm vào giỏ"
               src="/client/assets/images/cart_icon_white.svg"
               )
     div(class="product_text")
