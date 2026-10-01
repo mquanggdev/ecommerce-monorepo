@@ -5,27 +5,29 @@ mixin product-list-item(item)
     .row.align-items-center
       .col-md-5.col-sm-6.col-xxl-4
         div(class="product_img")
-          img.img-fluid.w-100(
-            alt=item.name
-            src=`${domainPublic}${item.images[0]}`
-            )
+          a.d-block(href=`/product/detail/${item.slug}`)
+            img.img-fluid.w-100(
+              alt=item.name
+              src=`${domainPublic}${item.images[0]}`
+              )
           ul(class="discount_list")
             //- li.new new
             if (item.discount > 0)
               li.discount
                 b -
                 | #{item.discount}%
+          //- Phải chọn màu/size ở trang chi tiết trước khi so sánh, yêu thích
           ul(class="btn_list")
             li
-              a(href="#")
+              a(href=`/product/detail/${item.slug}` title="So sánh")
                 img.img-fluid(
-                  alt="Compare" 
+                  alt="So sánh"
                   src="/client/assets/images/compare_icon_white.svg"
                   )
             li
-              a(href="#")
+              a(href=`/product/detail/${item.slug}` title="Yêu thích")
                 img.img-fluid(
-                  alt="Love" 
+                  alt="Yêu thích"
                   src="/client/assets/images/love_icon_white.svg"
                   )
       .col-md-7.col-sm-6.col-xxl-8

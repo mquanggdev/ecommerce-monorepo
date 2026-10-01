@@ -21,6 +21,13 @@
   }
 }
 
+/* Bộ lọc giá trên điện thoại chiếm hết chiều ngang: chừa chỗ để nhãn giá ở hai đầu không tràn ra ngoài */
+@media screen and (max-width: 991.98px) {
+  .range_slider {
+    padding: 0 35px;
+  }
+}
+
 .al-range-slider_vertical {
   grid-gap: 0 1em;
   display: grid;

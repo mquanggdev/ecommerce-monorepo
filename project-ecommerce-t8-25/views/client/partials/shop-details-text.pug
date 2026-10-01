@@ -22,9 +22,10 @@ div(class="shop_details_text")
       p(class="variant_title") #{attribute.name}:
       if (attribute.type == "color")
         ul(class="details_variant_color")
-          each variant in attribute.variants
+          each variant, index in attribute.variants
             li(
               style=`background: ${variant};`
+              title=attribute.variantsLabel[index]
               attribute-id=attribute.id
               variant=variant
               )
@@ -51,8 +52,9 @@ div(class="shop_details_text")
         i.fal.fa-plus
     div(class="details_btn_area")
       a(
-        href="#" 
+        href="javascript:;"
         class="common_btn buy_now"
+        button-buy-now
         )
         | Mua Ngay
         i.fas.fa-long-arrow-right
@@ -81,7 +83,11 @@ div(class="shop_details_text")
         i.fal.fa-exchange
         | So sánh
     li
-      a(href="#")
+      //- Hỏi đáp qua khung chat (chỉ có khi đã đăng nhập)
+      a(
+        href=(accountUser ? "javascript:;" : "/auth/login")
+        button-open-chat
+        )
         i.fal.fa-question-circle
         | Hỏi đáp
   ul(class="details_tags_sku")

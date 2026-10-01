@@ -1,12 +1,5 @@
 div(id="sticky_sidebar")
   .wow.fadeInRight(class="blog_details_right")
-    form(action="#")
-      input(
-        placeholder="Search..." 
-        type="text"
-        )
-      button(type="submit")
-        i.far.fa-search(aria-hidden="true")
     div(class="blog_details_right_header sidebar_blog")
       h3 Bài Viết Phổ Biến
       each item in popularBlogList
@@ -35,38 +28,38 @@ div(id="sticky_sidebar")
               p #{item.name}
               span (#{item.totalRecord})
     div(class="blog_details_right_header")
-      h3 Popular Tags
+      h3 Tìm kiếm phổ biến
       ul.d-flex.flex-wrap(class="blog_details_tag")
         li
-          a(href="#") Cleansing
+          a(href="/product/category?keyword=áo thun") áo thun
         li
-          a(href="#") Make up
+          a(href="/product/category?keyword=sơ mi") sơ mi
         li
-          a(href="#") eye cream
+          a(href="/product/category?keyword=polo") polo
         li
-          a(href="#") nail
+          a(href="/product/category?keyword=quần jean") quần jean
         li
-          a(href="#") shampoo
+          a(href="/product/category?keyword=quần kaki") quần kaki
         li
-          a(href="#") coffee bean
+          a(href="/product/category?keyword=áo khoác") áo khoác
         li
-          a(href="#") healthy
+          a(href="/product/category?keyword=hoodie") hoodie
         li
-          a(href="#") skin care
+          a(href="/product/category?keyword=blazer") blazer
         li
-          a(href="#") Cosmetics
+          a(href="/product/category?keyword=thắt lưng") thắt lưng
     div(class="blog_details_right_header")
       div(class="blog_seidebar_add")
         img.img-fluid.w-100(
           alt="blog add" 
-          src="/client/assets/images/blog_sidebar_add_img.png"
+          src="/client/assets/images/seed/blog-sidebar-ad.jpg"
           )
         .text
-          h4 Will help enhance your beauty.
+          h4 Lịch lãm mỗi ngày
           a(
             tabindex="-1" 
-            href="shop_details.html" 
+            href="/product/category/blazer-nam" 
             class="common_btn"
             )
-            | shop now
+            | Mua ngay
             i.fas.fa-long-arrow-right(aria-hidden="true")

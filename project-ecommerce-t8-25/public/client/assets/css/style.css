@@ -132,8 +132,8 @@ button {
 }
 
 :root {
-    --themeColoeOne: #0A69D8;
-    --themeColorTwo: #ffa500;
+    --themeColoeOne: #1B4F8C; /* xanh Thủy */
+    --themeColorTwo: #64748B; /* bạc Kim (đủ tương phản với chữ trắng) */
     --colorGreen: #05A845;
     --colorOlive: #AB9774;
     --colorYellow: #FFD43A;
@@ -141,7 +141,7 @@ button {
     --paraColor: #7d7b7b;
     --colorBlack: #333333;
     --colorWhite: #ffffff;
-    --lightBg: #edf5ff;
+    --lightBg: #EEF2F7;
     --lightBg2: #F5F5F5;
     --headingFont: "Libertinus Sans", serif;
     --bodyFont: "Roboto", serif;
@@ -420,7 +420,7 @@ button {
 }
 
 .page_banner_overlay {
-    background: rgb(7 28 31 / 38%);
+    background: rgb(8 24 48 / 20%);
     padding: 50px 0px 52px 0px;
 }
 
@@ -646,6 +646,58 @@ header .header_logo_area {
 
 header .header_logo {
     width: 130px;
+}
+
+/* Các cột header (form, khung flex) không ăn theo line-height nên bị dồn sát mép trên:
+   cho container/row cao bằng header để .align-items-center căn giữa theo chiều dọc */
+header > .container,
+header > .container > .row {
+    height: 100%;
+}
+
+/* Logo Questa: biểu tượng SVG + chữ (dùng ở header, menu cố định, footer) */
+header .header_logo.site_logo,
+.footer_2_logo_area .footer_logo.site_logo,
+.main_menu .menu_logo.site_logo {
+    width: auto;
+}
+
+.site_logo {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+/* cần !important vì template có rule img { width: 100% !important } */
+.site_logo img {
+    width: 40px !important;
+    height: 40px !important;
+    object-fit: contain !important;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.site_logo span {
+    font-family: var(--headingFont);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    color: var(--themeColoeOne);
+    vertical-align: middle;
+}
+
+.footer_logo.site_logo span {
+    color: var(--colorWhite);
+}
+
+.menu_logo.site_logo img {
+    width: 32px !important;
+    height: 32px !important;
+}
+
+.menu_logo.site_logo span {
+    font-size: 22px;
 }
 
 header form {
@@ -2402,7 +2454,7 @@ header .header_support h3 a:hover {
 }
 
 .view_all_btn_area .view_all_btn:hover::after {
-    filter: brightness(0) saturate(100%) invert(27%) sepia(38%) saturate(4948%) hue-rotate(203deg) brightness(93%) contrast(92%);
+    filter: brightness(0) saturate(100%) invert(24%) sepia(70%) saturate(859%) hue-rotate(179deg) brightness(97%) contrast(97%);
 }
 
 /* FLASH SELLER END */
@@ -3216,7 +3268,7 @@ footer {
 }
 
 .default_home .view_all_btn_area .view_all_btn:hover::after {
-    filter: brightness(0) saturate(100%) invert(83%) sepia(38%) saturate(6159%) hue-rotate(358deg) brightness(98%) contrast(108%);
+    filter: brightness(0) saturate(100%) invert(44%) sepia(16%) saturate(561%) hue-rotate(176deg) brightness(99%) contrast(94%);
 }
 
 .default_home .common_btn {
@@ -3341,7 +3393,7 @@ footer {
 }
 
 .main_menu_2 .menu_icon li a.user b img {
-    filter: brightness(0) saturate(100%) invert(75%) sepia(68%) saturate(3040%) hue-rotate(358deg) brightness(99%) contrast(103%);
+    filter: brightness(0) saturate(100%) invert(44%) sepia(16%) saturate(561%) hue-rotate(176deg) brightness(99%) contrast(94%);
 }
 
 .default_home .mini_cart .offcanvas-header {
@@ -3645,7 +3697,7 @@ footer {
 
 /* features start */
 .features_item {
-    background: #D9F5F3;
+    background: #E8EEF5;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -3662,7 +3714,7 @@ footer {
 }
 
 .features_item .icon {
-    background: #00BBAE;
+    background: #3A6EA5;
     width: 90px;
     height: 90px;
     padding: 10px;
@@ -3686,7 +3738,7 @@ footer {
 }
 
 .features_item.purple {
-    background: #fff2da;
+    background: #EEF1F4;
 }
 
 .features_item.purple .icon {
@@ -3694,19 +3746,19 @@ footer {
 }
 
 .features_item.orange {
-    background: #EAF9E8;
+    background: #E3ECF7;
 }
 
 .features_item.orange .icon {
-    background: #71D863;
+    background: var(--themeColoeOne);
 }
 
 .features_item.green {
-    background: #DCF6FB;
+    background: #E6F0F6;
 }
 
 .features_item.green .icon {
-    background: #16C4E3;
+    background: #2B7FB8;
 }
 
 /* features end */
@@ -4046,7 +4098,7 @@ footer {
 
 .best_selling_product_item .text .buy_btn {
     text-transform: capitalize;
-    border-bottom: 1px solid #ffa500;
+    border-bottom: 1px solid var(--themeColorTwo);
     color: var(--colorBlack);
     margin-top: 15px;
     font-size: 14px;
@@ -4362,7 +4414,7 @@ footer {
 }
 
 .blog_2 .blog_text .top li span img {
-    filter: brightness(0) saturate(100%) invert(71%) sepia(94%) saturate(2724%) hue-rotate(360deg) brightness(103%) contrast(104%);
+    filter: brightness(0) saturate(100%) invert(44%) sepia(16%) saturate(561%) hue-rotate(176deg) brightness(99%) contrast(94%);
 }
 
 .blog_2 .blog_text .top li::after {
@@ -7227,7 +7279,7 @@ footer {
 }
 
 .blog_details_top li span img {
-    filter: brightness(0) saturate(100%) invert(71%) sepia(94%) saturate(2724%) hue-rotate(360deg) brightness(103%) contrast(104%);
+    filter: brightness(0) saturate(100%) invert(44%) sepia(16%) saturate(561%) hue-rotate(176deg) brightness(99%) contrast(94%);
 }
 
 .blog_details_top li::after {
@@ -7657,7 +7709,7 @@ footer {
 }
 
 .popular_blog_text p span img {
-    filter: brightness(0) saturate(100%) invert(71%) sepia(94%) saturate(2724%) hue-rotate(360deg) brightness(103%) contrast(104%);
+    filter: brightness(0) saturate(100%) invert(44%) sepia(16%) saturate(561%) hue-rotate(176deg) brightness(99%) contrast(94%);
 }
 
 .popular_blog_text a {
@@ -8337,6 +8389,8 @@ footer {
     height: 25px;
     position: relative;
     cursor: pointer;
+    /* viền mảnh để ô màu trắng không lẫn vào nền */
+    border: 1px solid #d0d0d0;
     border-radius: 50%;
     -webkit-border-radius: 50%;
     -moz-border-radius: 50%;
@@ -8350,6 +8404,7 @@ footer {
     font-family: "Font Awesome 5 Free";
     font-weight: 900;
     color: var(--colorWhite);
+    text-shadow: 0 0 2px #000;
     top: 52%;
     left: 50%;
     display: flex;
@@ -8447,7 +8502,7 @@ footer {
 }
 
 .details_qty_input button:hover {
-    background: var(--colorGreen);
+    background: var(--themeColoeOne);
     color: var(--colorWhite);
 }
 
@@ -8468,7 +8523,7 @@ footer {
 }
 
 .details_btn_area .buy_now {
-    background: var(--colorGreen);
+    background: var(--themeColoeOne);
 }
 
 .details_list_btn {
@@ -9557,7 +9612,7 @@ footer {
     gap: 5px 10px;
     margin: 15px 0px 0px 52px;
     color: var(--themeColorTwo);
-    background: #ffa5000a;
+    background: #64748b0f;
     border-radius: 6px;
     -webkit-border-radius: 6px;
     -moz-border-radius: 6px;
@@ -9788,7 +9843,7 @@ footer {
     position: absolute;
     top: 5px;
     right: 5px;
-    background: var(--colorGreen) !important;
+    background: var(--themeColoeOne) !important;
     padding: 9.5px 25px;
     border-radius: 6px !important;
     -webkit-border-radius: 6px !important;
@@ -9954,7 +10009,7 @@ footer {
     border: 1px dashed #ddd;
     padding: 8px 15px;
     text-transform: capitalize;
-    background: #ffa5000a;
+    background: #64748b0f;
     border-radius: 6px;
     -webkit-border-radius: 6px;
     -moz-border-radius: 6px;
@@ -11245,7 +11300,7 @@ footer {
     justify-content: space-between;
     align-items: center;
     color: var(--themeColorTwo);
-    background: #ffa5000a;
+    background: #64748b0f;
     gap: 15px 100px;
     border-radius: 8px;
     -webkit-border-radius: 8px;
@@ -11426,7 +11481,7 @@ footer {
     padding: 12px 25px;
     font-family: var(--headingFont);
     text-transform: uppercase;
-    background: #ffa5000a;
+    background: #64748b0f;
     color: var(--themeColorTwo);
     margin-bottom: 10px;
     margin-top: 10px;
@@ -11509,7 +11564,7 @@ footer {
 
 /* dashboard overview start */
 .dashboard_overview_item {
-    background: #0aa84812;
+    background: #1b4f8c12;
     margin-bottom: 25px;
     display: flex;
     flex-wrap: wrap;
@@ -11529,7 +11584,7 @@ footer {
     line-height: 73px;
     text-align: center;
     margin-right: 30px;
-    background: var(--colorGreen);
+    background: var(--themeColoeOne);
     color: var(--colorWhite);
     font-size: 30px;
     margin-left: -40px;
@@ -11556,15 +11611,15 @@ footer {
 }
 
 .dashboard_overview_item.blue {
-    background: #66aaee1f;
+    background: #64748b1f;
 }
 
 .dashboard_overview_item.blue .icon {
-    background: #6ae;
+    background: var(--themeColorTwo);
 }
 
 .dashboard_overview_item.orange {
-    background: #ffa5001c;
+    background: #64748b1f;
 }
 
 .dashboard_overview_item.orange .icon {
@@ -11588,11 +11643,11 @@ footer {
 }
 
 .dashboard_overview_item.olive {
-    background: #ab977424;
+    background: #3a6ea51f;
 }
 
 .dashboard_overview_item.olive .icon {
-    background: var(--colorOlive);
+    background: #3A6EA5;
 }
 
 .dashboard_recent_order h3,
@@ -12339,7 +12394,7 @@ footer {
   position: fixed;
   bottom: 100px;
   right: 20px;
-  background: #007bff;
+  background: var(--themeColoeOne);
   color: #fff;
   width: 55px;
   height: 55px;
@@ -12375,7 +12430,7 @@ footer {
 
 /* HEADER */
 .chat-header {
-  background: #007bff;
+  background: var(--themeColoeOne);
   color: #fff;
   padding: 10px;
   display: flex;
@@ -12430,7 +12485,7 @@ footer {
 }
 
 .message.user .bubble {
-  background: #007bff;
+  background: var(--themeColoeOne);
   color: #fff;
 }
 
@@ -12460,10 +12515,35 @@ footer {
   margin-left: 8px;
   padding: 8px 12px;
   border: none;
-  background: #007bff;
+  background: var(--themeColoeOne);
   color: #fff;
   border-radius: 5px;
   cursor: pointer;
+}
+.chat-footer #chat-attach {
+  background: var(--themeColorTwo);
+}
+/* Màn hình nhỏ: khung chat vừa khít chiều ngang, không tràn ra ngoài */
+@media (max-width: 575.98px) {
+  #chat-button {
+    right: 12px;
+    bottom: 80px;
+    width: 50px;
+    height: 50px;
+  }
+
+  #chat-popup {
+    right: 12px;
+    left: 12px;
+    bottom: 140px;
+    width: auto;
+    max-width: none;
+    height: min(500px, calc(100vh - 220px));
+  }
+
+  .chat-footer input {
+    min-width: 0;
+  }
 }
 /* End CHAT */
 
@@ -12634,4 +12714,104 @@ footer {
 
 .message:hover .delete-message {
   display: flex;
+}
+
+/* ===== Trạng thái loading / lỗi dùng chung (xem main.js: setButtonLoading, htmlLoading, htmlError) ===== */
+@keyframes questa-spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn-spinner,
+.state-spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: questa-spin .7s linear infinite;
+}
+
+.btn-spinner {
+  margin-right: 8px;
+  vertical-align: -3px;
+}
+
+/* Nút đang chờ request: khóa bấm, không cho gửi lặp */
+.is-loading {
+  pointer-events: none;
+  cursor: progress;
+  opacity: .8;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Khối trạng thái chèn vào vùng nội dung vẽ bằng JS */
+.state-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.state-loading {
+  color: var(--themeColorTwo);
+  background: var(--lightBg);
+}
+
+.state-loading .state-spinner {
+  width: 20px;
+  height: 20px;
+  color: var(--themeColoeOne);
+}
+
+.state-error {
+  color: var(--colorRed);
+  background: #db44370d;
+  border: 1px dashed #db443766;
+}
+
+.state-error i {
+  font-size: 18px;
+}
+
+.state-empty {
+  color: var(--paraColor);
+  background: var(--lightBg2);
+}
+
+.state-retry {
+  padding: 5px 14px;
+  border-radius: 6px;
+  background: var(--themeColoeOne);
+  color: var(--colorWhite);
+  font-size: 13px;
+  transition: background .2s;
+}
+
+.state-retry:hover {
+  background: var(--themeColorTwo);
+}
+
+/* Vùng đã có dữ liệu cũ, đang tải lại: làm mờ và chặn bấm cho tới khi xong */
+.is-updating {
+  opacity: .5;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+
+/* Khung tóm tắt giỏ hàng: dòng trạng thái không cần nền trắng của item */
+.cart_page_summary ul li.state-row {
+  display: block;
+  padding: 0;
+  background: transparent;
 }

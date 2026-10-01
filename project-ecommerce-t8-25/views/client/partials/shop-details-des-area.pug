@@ -55,22 +55,8 @@ div(class="shop_details_des_area")
                   each image in item.images
                     li
                       img.img-fluid.w-100(
-                        alt="" 
+                        alt=""
                         src=`${domainPublic}${image}`
                         )
-          .row
-            div(class="pagination_area")
-              nav(aria-label="...")
-                ul.pagination.justify-content-start(class="mt_25")
-                  li.page-item
-                    a.page-link(href="#")
-                      i.far.fa-arrow-left
-                  li.page-item
-                    a.page-link.active(href="#") 01
-                  li.page-item
-                    a.page-link(href="#") 02
-                  li.page-item
-                    a.page-link(href="#") 03
-                  li.page-item
-                    a.page-link(href="#")
-                      i.far.fa-arrow-right
+          if (!reviewList.length)
+            p Chưa có đánh giá nào.

@@ -1,16 +1,11 @@
+include ../mixins/site-logo.pug
+
 header(class="header_2")
   .container
     .row.align-items-center
       .col-lg-2
         div(class="header_logo_area")
-          a(
-            class="header_logo" 
-            href="index.html"
-            )
-            img.img-fluid.w-100(
-              alt="Zenis" 
-              src="/client/assets/images/logo_2.png"
-              )
+          +site-logo("header_logo")
           .d-block.d-lg-none(
             aria-controls="offcanvasWithBothOptions" 
             data-bs-target="#offcanvasWithBothOptions" 
@@ -59,8 +54,8 @@ header(class="header_2")
               i.far.fa-phone-alt
             h3
               | Hotline:
-              a(href="callto:1234567890")
-                span +(402) 763 282 46
+              a(href="tel:0918079395")
+                span 0918 079 395
         .d-flex.flex-wrap.align-items-center.justify-content-end(class="topbar_right")
           //- select.language(class="select_js")
           //-   option English
@@ -68,9 +63,6 @@ header(class="header_2")
           //-   option Hindi
           //-   option Chinese
           .gtranslate_wrapper
+          //- Shop chỉ bán bằng VNĐ (giá lưu theo đồng)
           select(class="select_js")
-            option $USD
-            option €EUR
-            option ¥JPY
-            option £GBP
-            option ₹INR
+            option VNĐ
