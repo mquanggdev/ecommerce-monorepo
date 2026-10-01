@@ -1,4 +1,5 @@
 include ../mixins/menu-category-item.pug
+include ../mixins/site-logo.pug
 
 nav.d-none.d-lg-block(class="main_menu_2 main_menu")
   .container
@@ -6,14 +7,7 @@ nav.d-none.d-lg-block(class="main_menu_2 main_menu")
       .col-12.d-flex.flex-wrap
         div(class="main_menu_area")
           div(class="menu_category_area")
-            a.d-none(
-              class="menu_logo" 
-              href="/"
-              )
-              img.img-fluid.w-100(
-                alt="Zenis" 
-                src="/client/assets/images/logo_2.png"
-                )
+            +site-logo("menu_logo d-none")
             div(class="menu_category_bar")
               p
                 span
