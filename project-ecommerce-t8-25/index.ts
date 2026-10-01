@@ -8,6 +8,8 @@ import { connectDB } from "./configs/database.config";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { notFound } from "./middlewares/not-found.middleware";
+import { errorHandler } from "./middlewares/error.middleware";
+import mongoose from "mongoose";
 
 import session from "express-session";
 import passport from "passport";
@@ -22,7 +24,22 @@ import { startJobs } from './jobs/index.job';
 // Load biến môi trường
 dotenv.config();
 
+// Promise bị lỗi mà không có ai bắt (vd: dịch vụ bên ngoài lỗi lúc khởi tạo) mặc định làm sập cả server:
+// ghi log để tra cứu, server vẫn tiếp tục phục vụ các request khác
+process.on("unhandledRejection", (reason) => {
+  console.error("Promise bị lỗi không được xử lý:", reason);
+});
+
 const app = express();
+
+const isProduction = process.env.NODE_ENV === "production";
+
+// Production chạy sau Nginx: tin header X-Forwarded-* của đúng 1 proxy đứng trước,
+// để req.ip là IP thật của khách (giới hạn số lần đăng nhập theo từng người, không gộp chung IP của Nginx)
+// và req.secure đúng là HTTPS (cookie secure của session)
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
 
 // Thêm các security header cơ bản
 app.use(helmet({
@@ -49,6 +66,15 @@ connectDB();
 
 // Cho phép gửi data lên dạng json
 app.use(express.json());
+
+// Kiểm tra sức khỏe cho Docker healthcheck và bước deploy: chỉ "ok" khi đã kết nối được DB
+app.get("/healthz", (req, res) => {
+  const isDatabaseReady = mongoose.connection.readyState === 1;
+  res.status(isDatabaseReady ? 200 : 503).json({
+    status: isDatabaseReady ? "ok" : "error",
+    database: isDatabaseReady ? "connected" : "disconnected"
+  });
+});
 
 // Middleware tắt cache (áp dụng cho tất cả GET request)
 app.use((req, res, next) => {
@@ -83,11 +109,18 @@ app.locals.domainPublic = domainPublic;
 // Khởi tạo thư viện lấy cookie
 app.use(cookieParser());
 
-// Cấu hình session
+// Cấu hình session: chỉ dùng trong lúc đăng nhập Google/Facebook (sau đó đăng nhập bằng cookie JWT).
+// Không tạo session cho mọi lượt truy cập (bot cũng tạo) và cho hết hạn sớm để bộ nhớ không phình dần.
 app.use(session({
   secret: `${process.env.SESSION_SECRET}`,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax", // Google/Facebook chuyển hướng về callback vẫn mang theo cookie
+    maxAge: 10 * 60 * 1000 // 10 phút
+  }
 }));
 
 app.use(passport.initialize());
@@ -101,6 +134,9 @@ app.use(`/${pathAdmin}`, adminRoutes);
 
 // Không route nào khớp → 404
 app.use(notFound);
+
+// Lỗi chưa được xử lý ở route nào → 500 (đặt cuối cùng)
+app.use(errorHandler);
 
 // Khởi tạo Socket bên Server
 initSocket(io);
