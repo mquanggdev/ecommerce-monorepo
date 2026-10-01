@@ -1,13 +1,48 @@
+# ==========================================================
+# Bước 1 - build: cài đủ dependency và biên dịch TypeScript ra JavaScript
+# ==========================================================
+FROM node:22-alpine AS build
+
+WORKDIR /app
+
+# Không tải Chrome của puppeteer (~600MB, lại không chạy được trên Alpine); runtime dùng Chromium của Alpine
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# ==========================================================
+# Bước 2 - runtime: chỉ dependency production + JavaScript đã biên dịch
+# ==========================================================
 FROM node:22-alpine
 
 WORKDIR /app
 
+# Chromium cho xuất hóa đơn PDF; font DejaVu có đủ dấu tiếng Việt
+RUN apk add --no-cache chromium nss freetype harfbuzz ttf-dejavu
+
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
+    TZ=Asia/Ho_Chi_Minh
+
 COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 
-RUN npm install
+# index.js nằm cùng cấp với views/ và public/ nên __dirname và process.cwd() đều là /app
+COPY --from=build /app/dist ./
+COPY views ./views
+COPY public ./public
 
-COPY . .
+# Không chạy bằng root
+USER node
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# /healthz chỉ trả 200 khi đã kết nối DB
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3000/healthz > /dev/null || exit 1
+
+CMD ["node", "index.js"]

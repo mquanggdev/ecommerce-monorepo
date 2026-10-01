@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node -r ts-node/register index.ts",
     "dev": "nodemon --exec \"node --inspect -r ts-node/register\" index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --outDir dist"
   },
   "keywords": [],
   "author": "",

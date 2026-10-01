@@ -555,9 +555,8 @@ export const paymentVNPay = async (req: Request, res: Response) => {
   let date = new Date();
   let createDate = moment(date).format('YYYYMMDDHHmmss');
   
-  let ipAddr = req.headers['x-forwarded-for'] ||
-      req.connection.remoteAddress ||
-      req.socket.remoteAddress;
+  // IP của khách: sau Nginx req.ip đã là IP thật (trust proxy). Bỏ tiền tố IPv6 "::ffff:" của địa chỉ IPv4.
+  let ipAddr = `${req.ip || req.socket.remoteAddress || "127.0.0.1"}`.replace(/^::ffff:/, "");
   
   const apiPayment = await getApiPayment();
   const settingGeneral = await getGeneral();
@@ -712,12 +711,22 @@ export const exportPdf = async (req: Request, res: Response) => {
     ${renderedHtml}
   `;
   
-  // Tạo PDF từ HTML sử dụng Puppeteer
-  const browser = await puppeteer.launch(); // Mở trình duyệt ẩn
-  const page = await browser.newPage(); // Mở tab mới
-  await page.setContent(html, { waitUntil: 'networkidle0' }); // Đặt nội dung HTML
-  const pdfBuffer = await page.pdf({ format: 'A4' }); // Tạo PDF dưới dạng buffer
-  await browser.close(); // Đóng trình duyệt
+  // Tạo PDF từ HTML sử dụng Puppeteer.
+  // Trong Docker dùng Chromium cài sẵn của image (PUPPETEER_EXECUTABLE_PATH); local dùng Chrome puppeteer tự tải.
+  // --no-sandbox: sandbox của Chromium cần quyền kernel mà container không có;
+  // --disable-dev-shm-usage: /dev/shm của container mặc định rất nhỏ, Chromium dễ crash.
+  const browser = await puppeteer.launch({
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    args: ["--no-sandbox", "--disable-dev-shm-usage"]
+  });
+  let pdfBuffer;
+  try {
+    const page = await browser.newPage(); // Mở tab mới
+    await page.setContent(html, { waitUntil: 'networkidle0' }); // Đặt nội dung HTML
+    pdfBuffer = await page.pdf({ format: 'A4' }); // Tạo PDF dưới dạng buffer
+  } finally {
+    await browser.close(); // Luôn đóng trình duyệt, kể cả khi lỗi, để không rò tiến trình Chromium
+  }
 
   // Gửi file PDF về client
   res.setHeader('Content-Type', 'application/pdf'); // Thiết lập header để trình duyệt nhận biết đây là file PDF
