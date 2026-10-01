@@ -25,3 +25,8 @@ export const forgotPasswordLimiter = createLimiter(5, "Bạn đã yêu cầu qu�
 
 // Nhập OTP: chống dò mã
 export const otpLimiter = createLimiter(10, "Bạn đã nhập mã OTP quá nhiều lần, vui lòng thử lại sau 15 phút!");
+
+// Bản đồ đi qua server (dùng API key của shop): chặn việc lấy proxy làm nguồn bản đồ miễn phí
+// Một lần xem/kéo bản đồ tải khoảng 15-30 ô ảnh nên giới hạn ô ảnh rộng hơn giới hạn tìm địa chỉ
+export const mapTileLimiter = createLimiter(1500, "Bạn đã tải bản đồ quá nhiều lần, vui lòng thử lại sau 15 phút!");
+export const mapGeocodeLimiter = createLimiter(120, "Bạn đã tìm địa chỉ quá nhiều lần, vui lòng thử lại sau 15 phút!");

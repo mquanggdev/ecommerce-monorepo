@@ -2328,12 +2328,17 @@ if(listButtonApi.length > 0) {
 const boxMap = document.querySelector("#boxMap");
 let map = null;
 if(boxMap) {
-  // Khởi tạo bản đồ
+  // Khởi tạo bản đồ. Ô ảnh lấy qua server (/map/tiles) từ NDAMaps:
+  // openstreetmap.org bị một số nhà mạng chặn, và đi qua server để không lộ API key
   map = new ol.Map({
     target: 'boxMap',
     layers: [
       new ol.layer.Tile({
-        source: new ol.source.OSM()
+        source: new ol.source.XYZ({
+          url: '/map/tiles/{z}/{x}/{y}.png',
+          maxZoom: 20,
+          attributions: '© <a href="https://ndamaps.vn" target="_blank" rel="noopener">NDAMaps</a>'
+        })
       })
     ],
     view: new ol.View({
@@ -2388,11 +2393,11 @@ if(boxMap) {
     inputAddress.value = "";
     inputAddress.placeholder = "Đang lấy địa chỉ từ bản đồ...";
 
-    // Gọi API Nominatim để lấy địa chỉ chi tiết
-    requestJson(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+    // Lấy địa chỉ chi tiết từ toạ độ (qua server)
+    requestJson(`/map/reverse?lat=${lat}&lng=${lon}`)
       .then(data => {
-        if(data && data.display_name) {
-          inputAddress.value = data.display_name;
+        if(data.code == "success") {
+          inputAddress.value = data.address;
 
           const inputLon = document.querySelector(`[name="longitude"]`);
           inputLon.value = lon;
@@ -2403,7 +2408,7 @@ if(boxMap) {
           // Cập nhật lại giỏ hàng
           drawCart();
         } else {
-          notyf.error("Không tìm thấy địa chỉ!");
+          notyf.error(data.message);
         }
       })
       .catch(error => notyf.error(error.message))
@@ -2425,19 +2430,19 @@ if(boxMap) {
     if(isButtonLoading(searchBtn)) return;
     setButtonLoading(searchBtn, true, "Đang tìm...");
 
-    requestJson(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(keyword)}&countrycodes=vn`)
+    // Tìm toạ độ theo địa chỉ (qua server)
+    requestJson(`/map/search?keyword=${encodeURIComponent(keyword)}`)
       .then(data => {
-        if(data && data.length > 0) {
-          const firstResult = data[0];
-          const lon = parseFloat(firstResult.lon);
-          const lat = parseFloat(firstResult.lat);
+        if(data.code == "success") {
+          const lon = parseFloat(data.longitude);
+          const lat = parseFloat(data.latitude);
           setMarker(lon, lat);
           // Di chuyển bản đồ đến đúng vị trí
           map.getView().animate({ center: ol.proj.fromLonLat([lon, lat]), zoom: 15 });
 
           // Gán lại địa chỉ vào ô input
           const inputAddress = document.querySelector(`[name="address"]`);
-          inputAddress.value = firstResult.display_name;
+          inputAddress.value = data.address;
 
           const inputLon = document.querySelector(`[name="longitude"]`);
           inputLon.value = lon;
@@ -2448,7 +2453,7 @@ if(boxMap) {
           // Cập nhật lại giỏ hàng (phí vận chuyển theo địa chỉ mới), giống khi bấm chọn trên bản đồ
           drawCart();
         } else {
-          notyf.error("Không tìm thấy địa chỉ!");
+          notyf.error(data.message);
         }
       })
       .catch(error => notyf.error(error.message))

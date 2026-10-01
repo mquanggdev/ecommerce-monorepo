@@ -18,9 +18,15 @@ import * as seoMiddleware from "../../middlewares/client/seo.middleware";
 import * as settingMiddleware from "../../middlewares/client/setting.middleware";
 import * as chatMiddleware from "../../middlewares/client/chat.middleware";
 import chatRoutes from "./chat.route";
+import mapRoutes from "./map.route";
 
 
 const router = Router();
+
+// Bản đồ đặt trước các middleware bên dưới: mỗi lần xem bản đồ tải hàng chục ô ảnh,
+// không cần truy vấn danh mục, thuộc tính, chat... cho từng ô
+router.use('/map', mapRoutes);
+
 router.use(categoryMiddleware.getAllCategory);
 router.use(attributeMiddleware.getAttributeProduct);
 router.use(authMiddleware.verifyToken);

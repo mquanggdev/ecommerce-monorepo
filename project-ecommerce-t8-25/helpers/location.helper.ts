@@ -46,7 +46,7 @@ const normalizeAddress = async (city: string, district: string, ward: string) =>
 }
 
 export const getInfoAddress = async (latitude: number, longitude: number) => {
-  const geoRes = await axios.get(`https://mapapis.openmap.vn/v1/geocode/reverse?latlng=${latitude},${longitude}&apikey=${process.env.OPENMAP_KEY}`, {
+  const geoRes = await axios.get(`https://mapapis.ndamaps.vn/v1/geocode/reverse?latlng=${latitude},${longitude}&apikey=${process.env.OPENMAP_KEY}`, {
     timeout: REQUEST_TIMEOUT
   });
 
