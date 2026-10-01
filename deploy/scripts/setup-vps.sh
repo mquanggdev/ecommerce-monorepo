@@ -6,7 +6,8 @@
 # - Cài Docker + Docker Compose plugin
 # - Tạo user "deploy" (không có mật khẩu, chỉ đăng nhập bằng SSH key) thuộc nhóm docker
 # - Tường lửa: chỉ mở SSH, 80, 443 (cổng 3000/4000 của app không mở ra ngoài)
-# - Thêm 2GB swap để build/chạy Chromium không bị hết RAM
+# - Thêm swap 1GB nếu VPS chưa có (Chromium xuất PDF cần thêm RAM lúc cao điểm)
+# - Giới hạn log hệ thống 200MB để không đầy ổ đĩa
 # - Tạo thư mục /opt/questa cho file deploy
 # ==========================================================
 set -euo pipefail
@@ -51,14 +52,28 @@ ufw allow 80/tcp
 ufw allow 443/tcp
 ufw --force enable
 
-echo "==> Swap 2GB"
-if ! swapon --show | grep -q /swapfile; then
-  fallocate -l 2G /swapfile
-  chmod 600 /swapfile
-  mkswap /swapfile
-  swapon /swapfile
-  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+echo "==> Swap"
+# VPS đã có swap (file hay phân vùng, tên gì cũng được) thì giữ nguyên.
+# Chưa có thì tạo 1GB, chỉ khi ổ đĩa còn trống trên 5GB để không lấn chỗ của Docker.
+if [ -n "$(swapon --show --noheadings)" ]; then
+  echo "    Đã có swap: $(swapon --show --noheadings | awk '{print $1" "$3}' | tr '\n' ' ')"
+else
+  free_kb=$(df --output=avail / | tail -1)
+  if [ "$free_kb" -gt $((5 * 1024 * 1024)) ]; then
+    fallocate -l 1G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  else
+    echo "    Bỏ qua tạo swap: ổ đĩa còn dưới 5GB"
+  fi
 fi
+
+echo "==> Giới hạn log hệ thống (journal) ở 200MB"
+mkdir -p /etc/systemd/journald.conf.d
+printf '[Journal]\nSystemMaxUse=200M\n' > /etc/systemd/journald.conf.d/size.conf
+systemctl restart systemd-journald
 
 echo "==> Xong. Lấy dòng known_hosts cho GitHub secret VPS_SSH_KNOWN_HOSTS bằng lệnh (chạy trên máy bạn):"
 echo "    ssh-keyscan -H <IP VPS>"

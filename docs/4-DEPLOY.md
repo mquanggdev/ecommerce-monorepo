@@ -59,7 +59,7 @@ ssh-keygen -t ed25519 -C "github-actions-questa" -f ~/.ssh/questa_deploy -N ""
 curl -fsSL https://raw.githubusercontent.com/mquanggdev/ecommerce-monorepo/main/deploy/scripts/setup-vps.sh -o setup-vps.sh
 sudo bash setup-vps.sh "<nội dung file questa_deploy.pub>"
 ```
-Script cài Docker, tạo user `deploy`, mở tường lửa 22/80/443, thêm 2GB swap, tạo `/opt/questa`.
+Script cài Docker, tạo user `deploy`, mở tường lửa 22/80/443, thêm 1GB swap nếu VPS chưa có, giới hạn log hệ thống 200MB, tạo `/opt/questa`.
 
 Lấy dòng cho secret `VPS_SSH_KNOWN_HOSTS` (chạy trên máy bạn):
 ```bash
