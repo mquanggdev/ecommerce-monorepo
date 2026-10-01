@@ -88,6 +88,9 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.context }}/dockerfile
           push: ${{ env.PUSH == 'true' }}
+          # Mỗi lần đẩy chỉ một image (không kèm attestation dạng bản không tag),
+          # để bước xóa bản cũ bên dưới không xóa nhầm phần của image đang dùng
+          provenance: false
           tags: |
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
@@ -96,6 +99,15 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      # Repo private: dung lượng package trên ghcr.io có hạn mức. Chỉ giữ 3 bản gần nhất (đủ để quay về bản trước)
+      - name: Xóa image cũ trên ghcr.io
+        if: env.PUSH == 'true'
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ github.event.repository.name }}/${{ matrix.name }}
+          package-type: container
+          min-versions-to-keep: 3
 
   # ---------------------------------------------------------
   deploy:

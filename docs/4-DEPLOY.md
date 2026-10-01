@@ -30,6 +30,9 @@ Trình duyệt ──HTTPS──► Nginx (VPS, cổng 80/443)
 | Push vào `main` | Như trên → đẩy image lên `ghcr.io/mquanggdev/ecommerce-monorepo/{ecommerce,file-manager}:<commit>` → SSH vào VPS: cập nhật file cấu hình + biến môi trường, lấy HTTPS nếu chưa có, chạy `deploy.sh` → gọi `https://quangtm.site/healthz` từ bên ngoài |
 | Bấm tay (Actions → CI/CD → Run workflow) | Deploy lại `main` (vd: sau khi đổi secret) |
 
+Repo private → image trên ghcr.io cũng private, dung lượng package có hạn mức (GitHub Free: 500MB).
+Workflow tự xóa image cũ, chỉ giữ 3 bản gần nhất của mỗi service.
+
 `deploy.sh` chờ cả 2 service `healthy` tối đa 3 phút. Không đạt → in log, **tự chạy lại bản trước**, job báo đỏ.
 Job deploy chỉ chạy khi đã đặt biến `DOMAIN` trên GitHub (chưa dựng VPS thì được bỏ qua).
 
@@ -55,9 +58,12 @@ ssh-keygen -t ed25519 -C "github-actions-questa" -f ~/.ssh/questa_deploy -N ""
 - `~/.ssh/questa_deploy` (khóa riêng) → secret `VPS_SSH_KEY`
 
 ### 3. Dựng VPS (Ubuntu, đăng nhập root)
+Repo đang private nên VPS không tải thẳng từ GitHub được: chép script từ máy bạn lên.
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mquanggdev/ecommerce-monorepo/main/deploy/scripts/setup-vps.sh -o setup-vps.sh
-sudo bash setup-vps.sh "<nội dung file questa_deploy.pub>"
+# Trên máy bạn
+scp deploy/scripts/setup-vps.sh root@<IP VPS>:/root/setup-vps.sh
+# Trên VPS
+bash setup-vps.sh "<nội dung file questa_deploy.pub>"
 ```
 Script cài Docker, tạo user `deploy`, mở tường lửa 22/80/443, thêm 1GB swap nếu VPS chưa có, giới hạn log hệ thống 200MB, tạo `/opt/questa`.
 
