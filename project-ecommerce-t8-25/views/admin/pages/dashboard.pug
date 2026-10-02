@@ -47,7 +47,7 @@ block main
                           else
                             | Giảm
                             span.text-danger.mx-1 #{Math.abs(monthPercent).toFixed(1)}%
-                          | so với tháng trước    .row
+                          | so với tháng trước
       .col-md-12.col-lg-12
         .card
           .card-header
@@ -99,7 +99,7 @@ block main
                           else
                             | Giảm
                             span.text-danger.mx-1 #{Math.abs(monthOrderPercent).toFixed(1)}%
-                          |  so với hôm qua
+                          |  so với tháng trước
             
             h5.fs-14.mt-3 Đơn hàng Chờ xác nhận
             .row.g-3
@@ -145,7 +145,7 @@ block main
                           else
                             | Giảm
                             span.text-danger.mx-1 #{Math.abs(orderStatusStats.pending.monthPercent).toFixed(1)}%
-                          |  so với hôm qua
+                          |  so với tháng trước
 
             h5.fs-14.mt-3 Đơn hàng Đã xác nhận
             .row.g-3
@@ -191,7 +191,7 @@ block main
                           else
                             | Giảm
                             span.text-danger.mx-1 #{Math.abs(orderStatusStats.confirmed.monthPercent).toFixed(1)}%
-                          |  so với hôm qua
+                          |  so với tháng trước
 
             h5.fs-14.mt-3 Đơn hàng Đang giao
             .row.g-3
@@ -237,7 +237,7 @@ block main
                           else
                             | Giảm
                             span.text-danger.mx-1 #{Math.abs(orderStatusStats.shipping.monthPercent).toFixed(1)}%
-                          |  so với hôm qua
+                          |  so với tháng trước
 
             h5.fs-14.mt-3 Đơn hàng Giao thành công
             .row.g-3
@@ -283,7 +283,7 @@ block main
                           else
                             | Giảm
                             span.text-danger.mx-1 #{Math.abs(orderStatusStats.completed.monthPercent).toFixed(1)}%
-                          |  so với hôm qua
+                          |  so với tháng trước
 
             h5.fs-14.mt-3 Đơn hàng Hủy
             .row.g-3
@@ -329,7 +329,7 @@ block main
                           else
                             | Giảm
                             span.text-danger.mx-1 #{Math.abs(orderStatusStats.cancelled.monthPercent).toFixed(1)}%
-                          |  so với hôm qua
+                          |  so với tháng trước
 
             h5.fs-14.mt-3 Đơn hàng Trả hàng
             .row.g-3
@@ -375,4 +375,4 @@ block main
                           else
                             | Giảm
                             span.text-danger.mx-1 #{Math.abs(orderStatusStats.returned.monthPercent).toFixed(1)}%
-                          |  so với hôm qua
+                          |  so với tháng trước

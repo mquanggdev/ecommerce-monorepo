@@ -43,7 +43,8 @@ block main
                     td #{pagination.skip + index + 1}
                     td
                       img(
-                        src=`${domainPublic}${item.avatar}`
+                        src=(item.avatar ? `${domainPublic}${item.avatar}` : "/admin/assets/images/users/default-avatar.svg")
+                        onerror="this.onerror=null;this.src='/admin/assets/images/users/default-avatar.svg'"
                         class="rounded thumb-lg me-1 d-inline"
                       )
                     td #{item.fullName}

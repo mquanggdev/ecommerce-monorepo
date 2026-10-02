@@ -9,7 +9,8 @@
                 .position-relative
                   img.thumb-lg.rounded-circle(
                     alt=item.infoUser.fullName
-                    src=`${domainPublic}${item.infoUser.avatar}`
+                    src=(item.infoUser.avatar ? `${domainPublic}${item.infoUser.avatar}` : "/admin/assets/images/users/default-avatar.svg")
+                    onerror="this.onerror=null;this.src='/admin/assets/images/users/default-avatar.svg'"
                     )
                   span.position-absolute.bottom-0.end-0.d-none(user-status)
                     i.fa-solid.fa-circle.text-success.fs-10.border-2.border-theme-color

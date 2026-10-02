@@ -11,7 +11,8 @@ block main
             .flex-shrink-0
               img.rounded-circle.thumb-lg(
                 alt=infoUser.fullName
-                src=`${domainPublic}${infoUser.avatar}`
+                src=(infoUser.avatar ? `${domainPublic}${infoUser.avatar}` : "/admin/assets/images/users/default-avatar.svg")
+                onerror="this.onerror=null;this.src='/admin/assets/images/users/default-avatar.svg'"
                 )
             .flex-grow-1.ms-2.align-self-center
               div

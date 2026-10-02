@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import AccountUser from "../../models/account-user.model";
 import UserAddress from "../../models/user-address.model";
+import { demoUserEmail } from "../../configs/variable.config";
 
 const paths = [
   "/.well-known",
@@ -68,6 +69,18 @@ export const loggedIn = async (req: Request, res: Response, next: NextFunction) 
         message: "Vui lòng đăng nhập!"
       })
     }
+    return;
+  }
+  next();
+}
+
+// Mật khẩu tài khoản dùng thử được công khai, chặn các thao tác làm hỏng tài khoản cho người xem sau
+export const blockDemoAccount = (req: Request, res: Response, next: NextFunction) => {
+  if(res.locals.accountUser?.email === demoUserEmail) {
+    res.json({
+      code: "error",
+      message: "Tài khoản dùng thử không được đổi mật khẩu, thông tin cá nhân hay ảnh đại diện!"
+    });
     return;
   }
   next();
