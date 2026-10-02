@@ -137,9 +137,10 @@ export const dashboard = async  (req: Request, res: Response) => {
   const todayRevenue = todayRevenueResult[0]?.total || 0;
   const yesterdayRevenue = yesterdayRevenueResult[0]?.total || 0;
 
+  // Kỳ trước bằng 0: chỉ tính tăng 100% khi kỳ này có số liệu, còn 0 → 0 thì là 0%
   const todayPercent =
     yesterdayRevenue === 0
-      ? 100
+      ? (todayRevenue > 0 ? 100 : 0)
       : ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100;
 
   // Doanh thu tháng này & tháng trước
@@ -188,7 +189,7 @@ export const dashboard = async  (req: Request, res: Response) => {
 
   const monthPercent =
     lastMonthRevenue === 0
-      ? 100
+      ? (thisMonthRevenue > 0 ? 100 : 0)
       : ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
   // HẾT MỤC DOANH THU
 
@@ -214,7 +215,7 @@ export const dashboard = async  (req: Request, res: Response) => {
 
   const todayOrderPercent =
     yesterdayOrders === 0
-      ? 100
+      ? (todayOrders > 0 ? 100 : 0)
       : ((todayOrders - yesterdayOrders) / yesterdayOrders) * 100;
 
   // Tổng số đơn hàng tháng này và tháng trước
@@ -230,7 +231,7 @@ export const dashboard = async  (req: Request, res: Response) => {
 
   const monthOrderPercent =
     lastMonthOrders === 0
-      ? 100
+      ? (thisMonthOrders > 0 ? 100 : 0)
       : ((thisMonthOrders - lastMonthOrders) / lastMonthOrders) * 100;
 
   // Đơn hàng theo từng trạng thái
@@ -269,7 +270,7 @@ export const dashboard = async  (req: Request, res: Response) => {
 
     const todayPercent =
       yesterday === 0
-        ? 100
+        ? (today > 0 ? 100 : 0)
         : ((today - yesterday) / yesterday) * 100;
 
     // Tháng này
@@ -288,7 +289,7 @@ export const dashboard = async  (req: Request, res: Response) => {
 
     const monthPercent =
       lastMonth === 0
-        ? 100
+        ? (thisMonth > 0 ? 100 : 0)
         : ((thisMonth - lastMonth) / lastMonth) * 100;
 
     // Gom dữ liệu
@@ -910,7 +911,7 @@ export const customerStatistic = async (req: Request, res: Response) => {
     createdAt: { $gte: startYesterday, $lte: endYesterday }
   });
 
-  const todayPercent = yesterdayUsers === 0 ? 100 : ((todayUsers - yesterdayUsers) / yesterdayUsers) * 100;
+  const todayPercent = yesterdayUsers === 0 ? (todayUsers > 0 ? 100 : 0) : ((todayUsers - yesterdayUsers) / yesterdayUsers) * 100;
 
   // Khách hàng mới tháng này & tháng trước
   const thisMonthUsers = await AccountUser.countDocuments({
@@ -923,7 +924,7 @@ export const customerStatistic = async (req: Request, res: Response) => {
     createdAt: { $gte: startLastMonth, $lte: endLastMonth }
   });
 
-  const monthPercent = lastMonthUsers === 0 ? 100 : ((thisMonthUsers - lastMonthUsers) / lastMonthUsers) * 100;
+  const monthPercent = lastMonthUsers === 0 ? (thisMonthUsers > 0 ? 100 : 0) : ((thisMonthUsers - lastMonthUsers) / lastMonthUsers) * 100;
 
   // Top 10 khách hàng mua nhiều nhất
   const topUsers = await Order.aggregate([
