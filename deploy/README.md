@@ -67,9 +67,9 @@ bash setup-vps.sh "<nội dung file questa_deploy.pub>"
 ```
 Script cài Docker, tạo user `deploy`, mở tường lửa 22/80/443, thêm 1GB swap nếu VPS chưa có, giới hạn log hệ thống 200MB, tạo `/opt/questa`.
 
-Lấy dòng cho secret `VPS_SSH_KNOWN_HOSTS` (chạy trên máy bạn):
+Lấy dòng cho secret `VPS_SSH_KNOWN_HOSTS` (chạy **trên VPS**; `ssh-keyscan` của Windows lỗi `unsupported KEX method` với OpenSSH mới):
 ```bash
-ssh-keyscan -H <IP VPS>
+ssh-keyscan -H <IP VPS> 2>/dev/null
 ```
 
 ### 4. MongoDB Atlas
