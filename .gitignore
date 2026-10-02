@@ -8,3 +8,6 @@ _src-file-manager/
 
 # Biến môi trường production (bí mật) - chỉ để trên máy và trong GitHub Secrets
 deploy/env/
+
+# Tài liệu làm việc cá nhân (đánh giá, kế hoạch, ghi chú từng đợt sửa) - chỉ giữ trên máy
+docs/

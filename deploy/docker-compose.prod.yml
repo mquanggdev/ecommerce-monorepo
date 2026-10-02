@@ -72,7 +72,7 @@ services:
       # Chỉ trả ảnh khi Referer đến từ website (có dấu / ở cuối để không khớp nhầm tên miền khác)
       DOMAIN: https://${DOMAIN}/
     volumes:
-      # Ảnh upload: giữ nguyên qua các lần deploy. Nhớ backup volume này (xem docs/4-DEPLOY.md)
+      # Ảnh upload: giữ nguyên qua các lần deploy. Nhớ backup volume này (xem deploy/README.md)
       - media-data:/app/media
     restart: unless-stopped
     logging: *default-logging
