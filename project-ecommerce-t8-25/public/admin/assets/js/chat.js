@@ -354,18 +354,31 @@ if(formChat) {
     window.location.href = `/${pathAdmin}/chat/list/my-chat`;
   });
 
+  // Các nút AI: hiện "đang xử lý" trong khung gợi ý, khóa nút khi chờ, báo lỗi nếu thất bại
+  const chatAiSuggestReply = document.querySelector("#chat-ai-suggest-reply");
+  const aiBox = chatAiSuggestReply.querySelector(".inner-content");
+  const runAi = async (button, url, options) => {
+    // Nút là thẻ <a> nên khóa bằng class, bỏ qua lần bấm khi đang chờ
+    if(button.classList.contains("disabled")) return;
+    button.classList.add("disabled");
+    aiBox.textContent = "AI đang xử lý...";
+    chatAiSuggestReply.classList.remove("d-none");
+    try {
+      const res = await fetch(url, options);
+      const data = await res.json();
+      aiBox.textContent = data.code === "success" ? data.content : (data.message || "AI chưa trả lời được, thử lại sau!");
+    } catch (error) {
+      aiBox.textContent = "Không kết nối được tới máy chủ, thử lại sau!";
+    } finally {
+      button.classList.remove("disabled");
+    }
+  };
+
   // AI Suggest Reply
   const buttonAiSuggestReply = document.querySelector("#button-ai-suggest-reply");
-  const chatAiSuggestReply = document.querySelector("#chat-ai-suggest-reply");
   if(buttonAiSuggestReply) {
-    buttonAiSuggestReply.addEventListener("click", async () => {
-      const res = await fetch(`/${pathAdmin}/chat/suggest-reply/${chatRoomId}`);
-      const data = await res.json();
-      if(data.code === "success") {
-        const boxContent = chatAiSuggestReply.querySelector(".inner-content");
-        boxContent.textContent = data.content;
-        chatAiSuggestReply.classList.remove("d-none");
-      }
+    buttonAiSuggestReply.addEventListener("click", () => {
+      runAi(buttonAiSuggestReply, `/${pathAdmin}/chat/suggest-reply/${chatRoomId}`);
     });
   }
 
@@ -373,62 +386,38 @@ if(formChat) {
   const buttonCloseAiSuggestReply = chatAiSuggestReply.querySelector(".inner-close");
   buttonCloseAiSuggestReply.addEventListener("click", () => {
     chatAiSuggestReply.classList.add("d-none");
-    const boxContent = chatAiSuggestReply.querySelector(".inner-content");
-    if (boxContent) boxContent.textContent = "";
+    aiBox.textContent = "";
   });
 
-  
   // AI Edit Reply
   const buttonAiEditReply = document.querySelector("#button-ai-edit-reply");
   if(buttonAiEditReply) {
-    buttonAiEditReply.addEventListener("click", async () => {
-      const content = inputContent.value.trim();
-      const res = await fetch(`/${pathAdmin}/chat/edit-reply/${chatRoomId}`, {
+    buttonAiEditReply.addEventListener("click", () => {
+      runAi(buttonAiEditReply, `/${pathAdmin}/chat/edit-reply/${chatRoomId}`, {
         method: "POST",
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          content: content
+          content: inputContent.value.trim()
         })
       });
-      const data = await res.json();
-
-      if(data.code === "success") {
-        const boxContent = chatAiSuggestReply.querySelector(".inner-content");
-        boxContent.textContent = data.content;
-        chatAiSuggestReply.classList.remove("d-none");
-      }
     });
   }
 
   // AI Chat Summary
   const buttonAiChatSummary = document.querySelector("#button-ai-chat-summary");
   if(buttonAiChatSummary) {
-    buttonAiChatSummary.addEventListener("click", async () => {
-      const res = await fetch(`/${pathAdmin}/chat/summary/${chatRoomId}`);
-      const data = await res.json();
-
-      if(data.code === "success") {
-        const boxContent = chatAiSuggestReply.querySelector(".inner-content");
-        boxContent.textContent = data.content;
-        chatAiSuggestReply.classList.remove("d-none");
-      }
+    buttonAiChatSummary.addEventListener("click", () => {
+      runAi(buttonAiChatSummary, `/${pathAdmin}/chat/summary/${chatRoomId}`);
     });
   }
-  
+
   // AI Phân tích cảm xúc khách hàng
   const buttonAiCustomerEmotions = document.querySelector("#button-ai-customer-emotions");
   if(buttonAiCustomerEmotions) {
-    buttonAiCustomerEmotions.addEventListener("click", async () => {
-      const res = await fetch(`/${pathAdmin}/chat/customer-emotions/${chatRoomId}`);
-      const data = await res.json();
-
-      if(data.code === "success") {
-        const boxContent = chatAiSuggestReply.querySelector(".inner-content");
-        boxContent.textContent = data.content;
-        chatAiSuggestReply.classList.remove("d-none");
-      }
+    buttonAiCustomerEmotions.addEventListener("click", () => {
+      runAi(buttonAiCustomerEmotions, `/${pathAdmin}/chat/customer-emotions/${chatRoomId}`);
     });
   }
 }
