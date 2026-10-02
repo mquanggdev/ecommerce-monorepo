@@ -1,4 +1,4 @@
-# 4. DEPLOY PRODUCTION (quangtm.site)
+# Deploy production (quangtm.site)
 
 ## Tổng quan
 

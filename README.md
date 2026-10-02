@@ -69,9 +69,8 @@ các tương tác động (giỏ hàng, phí ship, chat...) dùng `fetch` và So
 │   ├── views/                 # Pug
 │   └── scripts/seed/          # Dữ liệu mẫu
 ├── file-manager/              # Service file
-├── deploy/                    # docker-compose production, Nginx, script VPS
-├── .github/workflows/         # CI/CD
-└── docs/                      # Đánh giá, kế hoạch và tài liệu từng đợt sửa lỗi
+├── deploy/                    # docker-compose production, Nginx, script VPS, hướng dẫn deploy
+└── .github/workflows/         # CI/CD
 ```
 
 ---
@@ -109,7 +108,6 @@ các tương tác động (giỏ hàng, phí ship, chat...) dùng `fetch` và So
 ## 3. Các vấn đề kỹ thuật và cách giải quyết
 
 Mỗi mục mô tả **vấn đề thực tế**, **cách giải quyết** và **vị trí trong code**.
-Chi tiết từng đợt sửa (hiện trạng, phương án, kiểm chứng) nằm trong [`docs/`](docs/).
 
 ### 3.1. Thanh toán: callback lặp lại không được cộng tiền/điểm hai lần
 
@@ -132,7 +130,7 @@ không đối chiếu số tiền.
   để cổng thanh toán ngừng gọi lại.
 - Lưu mã giao dịch, số tiền cổng xác nhận, thời điểm thanh toán vào đơn để đối soát.
 
-📍 `helpers/point.helper.ts` (`confirmOrderPaid`, `addPointAfterPayment`), `controllers/client/order.controller.ts` · [docs/3C](docs/3C-IDEMPOTENT-THANH-TOAN.md)
+📍 `helpers/point.helper.ts` (`confirmOrderPaid`, `addPointAfterPayment`), `controllers/client/order.controller.ts`
 
 ### 3.2. Tồn kho: không bán vượt số lượng khi nhiều người đặt cùng lúc
 
@@ -154,7 +152,7 @@ hai đơn cùng đọc thấy còn 1 sản phẩm và cùng trừ.
 - Sản phẩm có biến thể: **kho chung luôn bằng tổng kho các biến thể đang bật**, tính lại ngay trong DB bằng
   *update pipeline* sau mỗi lần thay đổi — dùng cho "Còn hàng (n)", bộ lọc còn hàng, gợi ý tìm kiếm.
 
-📍 `helpers/stock.helper.ts`, `validates/client/order.validate.ts`, `controllers/admin/order.controller.ts` · [docs/3D](docs/3D-DON-HANG-VALIDATE-VA-TON-KHO.md)
+📍 `helpers/stock.helper.ts`, `validates/client/order.validate.ts`, `controllers/admin/order.controller.ts`
 
 ### 3.3. Mã giảm giá và điểm: không vượt giới hạn khi dùng đồng thời
 
@@ -193,7 +191,7 @@ và **trình duyệt xóa sạch giỏ hàng của khách**. Bản đồ OpenStr
   và chỉ chấp nhận đường dẫn file do file-manager trả về (`/media/...`, không chứa `..`).
 - **Job định kỳ** (3h sáng) xóa hội thoại không hoạt động quá 10 ngày cùng file đính kèm.
 
-📍 `sockets/`, `public/*/assets/js/chat.js`, `jobs/chat.job.ts` · [docs/3A](docs/3A-XSS-CHAT-VA-CSP.md)
+📍 `sockets/`, `public/*/assets/js/chat.js`, `jobs/chat.job.ts`
 
 ### 3.6. Xác thực và phân quyền
 
@@ -308,7 +306,7 @@ flowchart LR
 **Nginx:** HTTPS (Let's Encrypt, tự gia hạn), HTTP→HTTPS, `www`→tên miền chính, WebSocket cho chat, upload 25MB,
 `/media` → file-manager, các cổng app không mở ra Internet. Log container giới hạn dung lượng; có script sao lưu ảnh.
 
-Hướng dẫn dựng VPS và vận hành: [docs/4-DEPLOY.md](docs/4-DEPLOY.md).
+Hướng dẫn dựng VPS và vận hành: [deploy/README.md](deploy/README.md).
 
 ---
 
