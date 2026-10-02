@@ -6,8 +6,7 @@ Website bán hàng hoàn chỉnh gồm **cửa hàng cho khách**, **trang quả
 và **một service quản lý file tách riêng**. Hệ thống tích hợp thanh toán (VNPay, ZaloPay), vận chuyển
 (GoShip), bản đồ (NDAMaps) và chạy production bằng Docker sau Nginx/HTTPS, triển khai tự động bằng GitHub Actions.
 
-Tài liệu này tập trung vào **thiết kế** và **cách giải quyết các vấn đề kỹ thuật**,
-không chỉ liệt kê tính năng.
+Tài liệu này tập trung vào **thiết kế** và **cách giải quyết các vấn đề kỹ thuật**.
 
 | | |
 |---|---|
