@@ -2,6 +2,9 @@ export const pathAdmin = "admin";
 export const domainCDN = process.env.CDN_URL || "http://localhost:4000";
 export const domainPublic = process.env.CDN_PUBLIC || domainCDN;
 
+// Tài khoản khách dùng thử công khai trong README: không cho đổi mật khẩu/thông tin cá nhân/ảnh đại diện
+export const demoUserEmail = "demo@quangtm.site";
+
 export const permissionList = [
   {
     id: "dashboard",

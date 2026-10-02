@@ -67,6 +67,7 @@ router.get('/reset-password', authController.resetPassword);
 router.post(
   '/reset-password', 
   authMiddleware.verifyToken,
+  authMiddleware.blockDemoAccount,
   authValidate.resetPasswordPost, 
   authController.resetPasswordPost
 );

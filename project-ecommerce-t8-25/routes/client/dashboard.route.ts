@@ -3,6 +3,7 @@ import { Router } from "express";
 import * as dashboardController from "../../controllers/client/dashboard.controller";
 import * as dashboardValidate from "../../validates/client/dashboard.validate";
 import multer from "multer";
+import { blockDemoAccount } from "../../middlewares/client/auth.middleware";
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.get('/profile/edit', dashboardController.profileEdit);
 
 router.patch(
   '/profile/edit', 
+  blockDemoAccount,
   dashboardValidate.profileEditPatch, 
   dashboardController.profileEditPatch
 );
@@ -53,6 +55,7 @@ router.patch(
 
 router.patch(
   '/profile/change-avatar', 
+  blockDemoAccount,
   upload.single("avatar"), 
   dashboardController.profileChangeAvatarPatch
 );

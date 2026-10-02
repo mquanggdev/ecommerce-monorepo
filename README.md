@@ -8,6 +8,16 @@ và **một service quản lý file tách riêng**. Hệ thống tích hợp tha
 
 Tài liệu này tập trung vào **thiết kế** và **cách giải quyết các vấn đề kỹ thuật**.
 
+### Dùng thử
+
+| | |
+|---|---|
+| Cửa hàng | https://quangtm.site |
+| Tài khoản khách | `demo@quangtm.site` / `Demo@123456` (không đổi được mật khẩu, thông tin cá nhân, ảnh đại diện) |
+| Thanh toán VNPay (sandbox) | Ngân hàng NCB · số thẻ `9704198526191432198` · tên `NGUYEN VAN A` · ngày phát hành `07/15` · OTP `123456` |
+
+Trang quản trị không mở công khai; các chức năng chính được chụp và chú thích ở [mục 2](#ảnh-chụp-trang-quản-trị).
+
 | | |
 |---|---|
 | Ngôn ngữ | TypeScript (Node.js 22) |
@@ -99,8 +109,37 @@ các tương tác động (giỏ hàng, phí ship, chat...) dùng `fetch` và So
 - **Phân quyền RBAC:** nhóm quyền với **55 quyền chi tiết** tới từng hành động; tài khoản super admin cấu hình qua biến môi trường;
   **nhật ký thao tác** của quản trị viên.
 - **Cài đặt hệ thống** lưu trong DB (khóa thanh toán, vận chuyển, OAuth, SMTP, domain) — đổi không cần deploy lại.
-- **Chat với khách + AI (Groq, Llama 3.1):** gợi ý 3 câu trả lời, sửa câu đang soạn, tóm tắt hội thoại, phân tích cảm xúc khách.
+- **Chat với khách + AI (Groq, gpt-oss-20b):** gợi ý 3 câu trả lời, sửa câu đang soạn, tóm tắt hội thoại, phân tích cảm xúc khách.
 - **Quản lý file:** thư mục nhiều cấp, upload nhiều file, đổi tên, xóa.
+
+### Ảnh chụp trang quản trị
+
+Ảnh chụp ở localhost bằng [`scripts/readme/admin-screenshots.mjs`](project-ecommerce-t8-25/scripts/readme/admin-screenshots.mjs)
+(Puppeteer: đánh số phần tử trên trang, ghép khung giải thích bên phải; tên, số điện thoại, địa chỉ khách được làm mờ).
+
+**1. Tổng quan kinh doanh**
+![Dashboard](assets/readme/admin-1-dashboard.png)
+
+**2. Quản lý sản phẩm**
+![Danh sách sản phẩm](assets/readme/admin-2-product-list.png)
+
+**3. Sản phẩm có biến thể**
+![Biến thể sản phẩm](assets/readme/admin-3-product-variants.png)
+
+**4. Quản lý đơn hàng**
+![Danh sách đơn hàng](assets/readme/admin-4-order-list.png)
+
+**5. Xử lý một đơn hàng**
+![Chi tiết đơn hàng](assets/readme/admin-5-order-detail.png)
+
+**6. Phân quyền (RBAC)**
+![Nhóm quyền](assets/readme/admin-6-role.png)
+
+**7. Dựng trang bằng khối giao diện**
+![Template](assets/readme/admin-7-template.png)
+
+**8. Chat với khách + trợ lý AI**
+![Chat và AI](assets/readme/admin-8-chat-ai.png)
 
 ---
 
