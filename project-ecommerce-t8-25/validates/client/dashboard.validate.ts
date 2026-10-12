@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import Joi from "joi";
+import { cancelReasonList } from "../../helpers/order-cancel.helper";
 
 export const profileEditPatch = (req: Request, res: Response, next: NextFunction) => {
   const schema = Joi.object({
@@ -102,6 +103,46 @@ export const addressCreatePost = (req: Request, res: Response, next: NextFunctio
     res.json({
       code: "error",
       message: errorMessage
+    });
+    return;
+  }
+
+  next();
+}
+
+export const orderCancelPatch = (req: Request, res: Response, next: NextFunction) => {
+  const schema = Joi.object({
+    reason: Joi.string()
+      .valid(...cancelReasonList)
+      .required()
+      .messages({
+        "any.required": "Vui lòng chọn lý do hủy đơn!",
+        "string.empty": "Vui lòng chọn lý do hủy đơn!",
+        "any.only": "Lý do hủy đơn không hợp lệ!",
+      }),
+    note: Joi.string()
+      .allow("")
+      .max(200)
+      .messages({
+        "string.max": "Ghi chú không được vượt quá 200 ký tự!",
+      }),
+  });
+
+  const { error } = schema.validate(req.body);
+
+  if(error) {
+    res.json({
+      code: "error",
+      message: error.details[0].message
+    });
+    return;
+  }
+
+  // "Lý do khác" thì bắt buộc ghi rõ
+  if(req.body.reason === "Lý do khác" && !`${req.body.note || ""}`.trim()) {
+    res.json({
+      code: "error",
+      message: "Vui lòng ghi rõ lý do hủy đơn!"
     });
     return;
   }

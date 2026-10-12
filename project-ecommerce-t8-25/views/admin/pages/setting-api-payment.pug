@@ -41,4 +41,15 @@ block main
             .mb-3
               label.form-label(for="vnPayURL") URL
               input(id="vnPayURL" name="vnPayURL" class="form-control" value=`${record ? record.data.vnPayURL : ''}`)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="vnPayApiUrl") URL API (tra cứu giao dịch)
+              input(
+                id="vnPayApiUrl"
+                name="vnPayApiUrl"
+                class="form-control"
+                placeholder="https://sandbox.vnpayment.vn/merchant_webapi/api/transaction"
+                value=`${record && record.data.vnPayApiUrl ? record.data.vnPayApiUrl : ''}`
+              )
+              small.text-muted Để trống thì dùng URL sandbox.
         button.btn.btn-primary(type="submit") Cập nhật

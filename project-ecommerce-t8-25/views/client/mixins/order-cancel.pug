@@ -1,0 +1,75 @@
+//- Hủy đơn hàng phía khách: điều kiện hiển thị, nút mở popup, popup xác nhận (dùng chung cho danh sách và chi tiết đơn)
+
+//- Tên phương thức thanh toán, kèm ghi chú nếu đơn online đã chuyển sang thanh toán khi nhận hàng
+mixin payment-method-name(order)
+  case order.paymentMethod
+    when "money"
+      | Thanh toán khi nhận hàng
+    when "vnpay"
+      | VNPay
+    when "zalopay"
+      | ZaloPay
+  if order.paymentSwitch && order.paymentSwitch.from
+    small(class="order_switch_note")
+      |  (chuyển từ #{order.paymentSwitch.from == "vnpay" ? "VNPay" : "ZaloPay"} do chưa thanh toán)
+
+//- Nút hủy: chỉ đơn "Chờ xác nhận" và chưa thanh toán
+mixin order-cancel-button(order, className)
+  if order.orderStatus == "pending" && order.paymentStatus == "unpaid"
+    button(
+      type="button"
+      class=`order_cancel_btn ${className || ""}`
+      button-cancel-order=order.id
+      data-code=order.code
+      ) Hủy đơn hàng
+
+mixin order-cancel-modal(reasonList)
+  #modalCancelOrder.modal.fade(
+    aria-hidden="true"
+    aria-labelledby="modalCancelOrderTitle"
+    tabindex="-1"
+    )
+    .modal-dialog.modal-dialog-centered
+      .modal-content.order_cancel_modal
+        .modal-header
+          h4#modalCancelOrderTitle.modal-title
+            | Hủy đơn hàng #[span(cancel-order-code)]?
+          button.btn-close(
+            aria-label="Đóng"
+            data-bs-dismiss="modal"
+            type="button"
+            )
+        .modal-body
+          form(form-cancel-order)
+            p.mb-2 Lý do hủy:
+            each reason, index in reasonList
+              .form-check
+                input.form-check-input(
+                  type="radio"
+                  name="reason"
+                  id=`cancelReason${index}`
+                  value=reason
+                  )
+                label.form-check-label(for=`cancelReason${index}`) #{reason}
+            textarea.form-control.mt-2(
+              name="note"
+              rows="2"
+              maxlength="200"
+              placeholder="Ghi chú thêm (bắt buộc khi chọn Lý do khác)"
+              )
+            p.order_cancel_warning
+              i.far.fa-exclamation-triangle
+              |  Đơn đã hủy không thể khôi phục.
+            div(cancel-order-error)
+            .order_cancel_actions
+              button(
+                type="button"
+                class="common_btn go_btn"
+                data-bs-dismiss="modal"
+                ) Không
+              button(
+                type="submit"
+                class="common_btn order_cancel_submit"
+                button-submit-cancel
+                disabled
+                ) Xác nhận hủy

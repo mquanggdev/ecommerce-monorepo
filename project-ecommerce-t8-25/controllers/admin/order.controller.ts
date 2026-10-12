@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import Order from '../../models/order.model';
 import { pathAdmin } from '../../configs/variable.config';
 import { Parser } from 'json2csv';
-import { increaseStock } from '../../helpers/stock.helper';
+import { cancelShipment, releaseOrderResources } from '../../helpers/order-cancel.helper';
 
 export const list = async (req: Request, res: Response) => {
   const find: {
@@ -129,27 +129,39 @@ export const editPatch = async (req: Request, res: Response) => {
       return;
     }
 
-    order.orderStatus = orderStatus;
-    order.paymentStatus = paymentStatus;
-    order.note = note;
+    // Chỉ ghi khi đơn vẫn đúng trạng thái admin đang nhìn thấy: khách vừa hủy hoặc cổng vừa báo thanh toán thì không ghi đè
+    const isClosing = closedStatusList.includes(orderStatus) && !closedStatusList.includes(oldOrderStatus);
+    const dataUpdate: any = {
+      orderStatus: orderStatus,
+      paymentStatus: paymentStatus,
+      note: note
+    };
+    if (isClosing) {
+      dataUpdate.cancelledBy = "admin";
+      dataUpdate.cancelledAt = new Date();
+    }
+    const updateResult = await Order.updateOne(
+      {
+        _id: id,
+        deleted: false,
+        orderStatus: oldOrderStatus,
+        paymentStatus: order.paymentStatus
+      },
+      dataUpdate
+    );
+    if (updateResult.matchedCount !== 1) {
+      res.json({
+        code: "error",
+        message: "Đơn hàng vừa được cập nhật ở nơi khác, vui lòng tải lại trang!"
+      });
+      return;
+    }
 
-    await order.save();
-
-    // Hoàn kho khi đơn chuyển sang hủy hoặc trả hàng (chỉ một lần cho mỗi đơn)
-    if (closedStatusList.includes(orderStatus) && !closedStatusList.includes(oldOrderStatus)) {
-      const claimed: any = await Order.findOneAndUpdate(
-        {
-          _id: id,
-          stockRestoredAt: { $exists: false }
-        },
-        {
-          stockRestoredAt: new Date()
-        }
-      );
-      if (claimed) {
-        for (const item of claimed.items) {
-          await increaseStock(item.productId, item.quantity, item.variantValue);
-        }
+    // Hủy hoặc trả hàng: hoàn kho, trả điểm và lượt mã giảm giá (mỗi việc đúng một lần cho mỗi đơn)
+    if (isClosing) {
+      await releaseOrderResources(`${id}`);
+      if (orderStatus === "cancelled") {
+        await cancelShipment(order);
       }
     }
 

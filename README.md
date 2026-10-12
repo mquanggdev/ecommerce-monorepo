@@ -93,8 +93,9 @@ các tương tác động (giỏ hàng, phí ship, chat...) dùng `fetch` và So
   lịch sử sản phẩm đã xem, gợi ý mua kèm.
 - **Đặt hàng:** sổ địa chỉ chọn trên bản đồ, **phí ship thật** từ nhiều hãng (GoShip), mã giảm giá,
   **điểm tích lũy** (trừ vào đơn, cộng sau khi thanh toán), thanh toán COD / **VNPay** / **ZaloPay**, xuất **hóa đơn PDF**.
+  Thanh toán online không hoàn tất thì đơn **tự chuyển sang thanh toán khi nhận hàng** (có hỏi lại cổng trước khi chuyển).
 - **Tài khoản:** đăng ký/đăng nhập, Google/Facebook OAuth, quên mật khẩu bằng OTP qua email,
-  theo dõi đơn, đánh giá sản phẩm kèm ảnh (chỉ với đơn đã giao thành công).
+  theo dõi đơn, **tự hủy đơn** đang chờ xác nhận (popup xác nhận, chọn lý do), đánh giá sản phẩm kèm ảnh (chỉ với đơn đã giao thành công).
 - **Chat trực tuyến** với nhân viên: gửi file/ảnh, trạng thái "đang nhập", đánh giá cuộc chat.
 - **SEO:** canonical URL, meta/Open Graph theo từng sản phẩm/bài viết, `sitemap.xml`, `robots.txt`.
 
@@ -103,7 +104,7 @@ các tương tác động (giỏ hàng, phí ship, chat...) dùng `fetch` và So
   tỉ lệ trạng thái đơn, **top 10 sản phẩm bán chạy**, khách hàng mới và **top 10 khách hàng** theo tổng chi tiêu.
 - **Quản lý nội dung:** sản phẩm, biến thể, thuộc tính, danh mục dạng cây, bài viết, mã giảm giá, đánh giá (duyệt);
   thùng rác/khôi phục; **nhập/xuất CSV** sản phẩm, **xuất CSV** đơn hàng; chỉnh SEO từng sản phẩm.
-- **Đơn hàng:** đổi trạng thái theo vòng đời, hủy/trả hàng **tự hoàn kho**.
+- **Đơn hàng:** đổi trạng thái theo vòng đời, hủy/trả hàng **tự hoàn kho, trả điểm và lượt mã giảm giá**.
 - **Page builder:** trang chủ dựng từ các **Block** (banner, sản phẩm theo danh mục, bài viết...) sắp xếp trong **Template**,
   mỗi block lấy dữ liệu thật theo cấu hình — đổi giao diện không cần sửa code.
 - **Phân quyền RBAC:** nhóm quyền với **55 quyền chi tiết** tới từng hành động; tài khoản super admin cấu hình qua biến môi trường;
@@ -272,6 +273,26 @@ Server lấy dữ liệu theo cấu hình rồi render từng block — admin đ
 
 📍 `helpers/block.helper.ts`, `models/block.model.ts`, `models/template.model.ts`, `views/client/blocks/`
 
+### 3.10. Thanh toán online không hoàn tất và khách tự hủy đơn
+
+**Vấn đề.** Đơn VNPay/ZaloPay được tạo (đã trừ kho, giữ mã giảm giá, trừ điểm) **trước** khi khách thanh toán.
+Khách hủy ở cổng hoặc đóng trình duyệt thì đơn treo mãi ở "chưa thanh toán": giữ hàng, sai tồn kho. Khách cũng không tự hủy được đơn.
+Cái khó là phân biệt *chưa trả* với *đã trả nhưng web chưa nhận được kết quả* — VNPay chỉ báo qua trình duyệt của khách,
+khách trả xong rồi đóng tab thì web không biết; chuyển nhầm đơn đó sang thanh toán khi nhận hàng thì khách bị thu tiền hai lần.
+
+**Giải quyết.**
+- Lưu mã giao dịch mỗi lần tạo link thanh toán (`paymentAttempts`), đặt link hết hạn sau 15 phút.
+- Khi chưa có kết quả, **hỏi lại cổng** (VNPay `querydr`, ZaloPay `/v2/query`, có kiểm chữ ký phản hồi):
+  đã trả → ghi nhận thanh toán; chắc chắn chưa trả → chuyển sang thanh toán khi nhận hàng; chưa rõ (cổng lỗi, trạng thái có thể đã trừ tiền) → **không làm gì**, lần sau hỏi lại.
+  Chạy ngay khi khách quay về từ cổng với kết quả thất bại, và bằng **job 5 phút/lần** cho đơn quá 20 phút.
+- ZaloPay sandbox vẫn trả "chưa thực hiện" cho giao dịch khách vừa hủy, nên dùng thêm tham số **có chữ ký** ZaloPay gắn khi đưa khách về.
+- Khách trả muộn sau khi đơn đã chuyển: ghi nhận thanh toán và đặt lại phương thức theo cổng để shipper không thu tiền.
+- **Khách tự hủy** đơn "chờ xác nhận, chưa thanh toán" bằng lệnh cập nhật có điều kiện trạng thái: khách hủy đúng lúc admin xác nhận thì chỉ một bên thắng.
+  Hủy (khách hoặc admin) trả lại kho, điểm, lượt mã giảm giá, **mỗi việc đúng một lần** nhờ mốc thời gian trên đơn
+  (đã thử 3 yêu cầu hủy đồng thời: 1 thành công, kho/điểm chỉ trả một lần).
+
+📍 `helpers/payment-query.helper.ts`, `helpers/order-cancel.helper.ts`, `jobs/payment.job.ts`, `controllers/client/order.controller.ts`
+
 ---
 
 ## 4. Mô hình dữ liệu
@@ -387,7 +408,7 @@ Ghi rõ những gì **chưa** làm, theo thứ tự ưu tiên:
 | Content Security Policy đang tắt vì còn nhiều inline script trong Pug | Chuyển inline script sang file/nonce rồi bật CSP |
 | Quan hệ giữa các collection lưu dạng `String` thay vì `ObjectId` | Migrate dữ liệu, dùng `populate`/`$lookup` có index |
 | Môi trường local và production dùng chung database | Tách database production, seed riêng |
-| ZaloPay chỉ ghi nhận thanh toán qua callback | Thêm bước hỏi lại trạng thái qua API query khi khách quay về |
+| Chưa có hoàn tiền: đơn đã thanh toán online muốn hủy phải liên hệ shop | Gọi API hoàn tiền của VNPay/ZaloPay, chỉ đổi sang "đã hoàn tiền" khi cổng xác nhận |
 | Chưa có cache (danh mục, cấu hình) — mỗi trang truy vấn lại | Cache in-memory có TTL, sau đó Redis nếu chạy nhiều instance |
 
 ---

@@ -18,6 +18,17 @@ block main
             h3 Đặt hàng thành công!
             p
               | Cảm ơn bạn đã mua hàng! Mã đơn hàng của bạn là <b>#{orderCode}</b>
+            if switchedToCOD
+              div(class="order_notice")
+                i.far.fa-info-circle
+                div
+                  | Thanh toán chưa hoàn tất. Đơn hàng <b>#{orderCode}</b> đã được chuyển sang <b>thanh toán khi nhận hàng</b>, bạn trả tiền khi nhận hàng.
+                  | Nếu không muốn nhận hàng, bạn có thể hủy đơn trong <a href="/dashboard/order/list">Đơn hàng của tôi</a>.
+            else if waitingPayment
+              div(class="order_notice")
+                i.far.fa-clock
+                div
+                  | Đơn hàng đang chờ cổng thanh toán xác nhận. Nếu bạn chưa thanh toán xong, sau ít phút đơn sẽ tự chuyển sang <b>thanh toán khi nhận hàng</b>.
             .d-flex.flex-wrap.align-items-center.justify-content-center.gap-3
               a(
                 class="common_btn go_btn" 

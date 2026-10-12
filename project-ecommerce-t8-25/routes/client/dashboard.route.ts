@@ -64,6 +64,12 @@ router.patch(
 router.get('/order/list', dashboardController.orderList);
 router.get('/order/detail/:id', dashboardController.orderDetail);
 
+router.patch(
+  '/order/cancel/:id',
+  dashboardValidate.orderCancelPatch,
+  dashboardController.orderCancelPatch
+);
+
 
 
 router.get('/order/review/:id', dashboardController.orderReview);

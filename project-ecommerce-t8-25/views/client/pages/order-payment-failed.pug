@@ -12,9 +12,15 @@ block main
           div(class="payment_success_text")
             h3 Thanh toán không thành công
             p #{message}
-            if orderCode
+            if switchedToCOD
+              div(class="order_notice")
+                i.far.fa-info-circle
+                div
+                  | Thanh toán chưa hoàn tất. Đơn hàng <b>#{orderCode}</b> đã được chuyển sang <b>thanh toán khi nhận hàng</b>, bạn trả tiền khi nhận hàng.
+                  | Nếu không muốn nhận hàng, bạn có thể hủy đơn trong <a href="/dashboard/order/list">Đơn hàng của tôi</a>.
+            else if orderCode
               p
-                | Mã đơn hàng của bạn là <b>#{orderCode}</b>. Đơn hàng vẫn được giữ, bạn có thể thanh toán lại.
+                | Mã đơn hàng của bạn là <b>#{orderCode}</b>. Nếu bạn chưa thanh toán xong, sau ít phút đơn sẽ tự chuyển sang <b>thanh toán khi nhận hàng</b>.
             .d-flex.flex-wrap.align-items-center.justify-content-center.gap-3
               a(
                 class="common_btn go_btn"

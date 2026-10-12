@@ -2779,6 +2779,59 @@ if(buttonOrder) {
 }
 // End Button Order
 
+// Hủy đơn hàng: nút mở popup xác nhận, chọn lý do rồi gửi
+const modalCancelOrder = document.querySelector("#modalCancelOrder");
+if(modalCancelOrder) {
+  const formCancel = modalCancelOrder.querySelector("[form-cancel-order]");
+  const buttonSubmit = modalCancelOrder.querySelector("[button-submit-cancel]");
+  const boxError = modalCancelOrder.querySelector("[cancel-order-error]");
+  const modal = bootstrap.Modal.getOrCreateInstance(modalCancelOrder);
+  let orderId = "";
+
+  document.querySelectorAll("[button-cancel-order]").forEach(button => {
+    button.addEventListener("click", () => {
+      orderId = button.getAttribute("button-cancel-order");
+      modalCancelOrder.querySelector("[cancel-order-code]").textContent = button.getAttribute("data-code");
+      formCancel.reset();
+      boxError.innerHTML = "";
+      buttonSubmit.disabled = true;
+      modal.show();
+    });
+  });
+
+  // Chỉ bật nút xác nhận khi đã chọn lý do
+  formCancel.addEventListener("change", () => {
+    if(!isButtonLoading(buttonSubmit)) {
+      buttonSubmit.disabled = !formCancel.querySelector("[name='reason']:checked");
+    }
+  });
+
+  formCancel.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const reasonInput = formCancel.querySelector("[name='reason']:checked");
+    if(!reasonInput) return;
+    boxError.innerHTML = "";
+
+    const dataFinal = {
+      reason: reasonInput.value,
+      note: formCancel.note.value.trim()
+    };
+
+    sendWithButton(buttonSubmit, `/dashboard/order/cancel/${orderId}`, jsonOptions("PATCH", dataFinal), data => {
+      if(data.code == "error") {
+        boxError.innerHTML = htmlError(data.message);
+        boxError.querySelector("[button-retry]")?.remove();
+        return;
+      }
+      // Thành công: tải lại trang để thấy trạng thái "Đã hủy", giữ nút khóa trong lúc chuyển trang
+      drawNotify("success", data.message);
+      window.location.reload();
+      return true;
+    }, "Đang hủy...");
+  });
+}
+// Hết Hủy đơn hàng
+
 // Viết đánh giá
 const listButtonReview = document.querySelectorAll("[data-bs-target='#modalReview']");
 if(listButtonReview.length > 0) {

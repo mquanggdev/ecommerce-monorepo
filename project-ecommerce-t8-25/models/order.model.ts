@@ -70,7 +70,27 @@ const schema = new mongoose.Schema(
       type: Number,
       default: 0 // số tiền được trừ từ điểm
     },
+    couponId: String, // Id mã giảm giá đã giữ lượt dùng (để trả lại khi hủy)
     stockRestoredAt: Date, // Thời điểm đã hoàn kho (chặn hoàn lặp)
+    pointsReturnedAt: Date, // Thời điểm đã trả lại điểm khách dùng cho đơn (chặn trả lặp)
+    couponReturnedAt: Date, // Thời điểm đã trả lại lượt dùng mã giảm giá (chặn trả lặp)
+    cancelReason: String, // Lý do hủy
+    cancelledBy: String, // "user" | "admin"
+    cancelledAt: Date,
+    paymentAttempts: [ // Mỗi lần tạo link thanh toán online, dùng để hỏi lại cổng xem đã trả tiền chưa
+      {
+        _id: false,
+        provider: String, // "vnpay" | "zalopay"
+        ref: String, // vnp_TxnRef hoặc app_trans_id
+        createDate: String, // vnp_CreateDate (VNPay cần khi tra cứu)
+        createdAt: Date
+      }
+    ],
+    paymentSwitch: { // Đơn online chưa thanh toán được chuyển sang thanh toán khi nhận hàng
+      from: String, // "vnpay" | "zalopay"
+      reason: String, // "failed" (khách hủy/lỗi ở cổng) | "timeout" (quá hạn không có kết quả)
+      at: Date
+    },
     paidAt: Date, // Thời điểm xác nhận thanh toán
     pointsAwardedAt: Date, // Thời điểm đã cộng điểm thưởng (dùng để chặn cộng lặp)
     payment: { // Thông tin giao dịch từ cổng thanh toán

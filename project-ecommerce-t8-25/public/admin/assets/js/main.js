@@ -2035,6 +2035,7 @@ if(settingApiPaymentForm) {
       const vnPayTmnCode = event.target.vnPayTmnCode.value;
       const vnPayHashSecret = event.target.vnPayHashSecret.value;
       const vnPayURL = event.target.vnPayURL.value;
+      const vnPayApiUrl = event.target.vnPayApiUrl.value.trim();
 
       // Tạo dataFinal
       const dataFinal = {
@@ -2045,6 +2046,7 @@ if(settingApiPaymentForm) {
         vnPayTmnCode: vnPayTmnCode,
         vnPayHashSecret: vnPayHashSecret,
         vnPayURL: vnPayURL,
+        vnPayApiUrl: vnPayApiUrl,
       };
       
       fetch(`/${pathAdmin}/setting/api-payment`, {

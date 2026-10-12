@@ -24,6 +24,8 @@ export const confirmOrderPaid = async (
     },
     {
       paymentStatus: "paid",
+      // Khách trả muộn sau khi đơn đã chuyển sang thanh toán khi nhận hàng: đặt lại đúng cổng để shipper không thu tiền nữa
+      paymentMethod: payment.provider,
       paidAt: new Date(),
       payment: {
         ...payment,

@@ -53,6 +53,8 @@ block main
                           span.badge.bg-danger VNPay
                         when "zalopay"
                           span.badge.bg-primary ZaloPay
+                      if item.paymentSwitch && item.paymentSwitch.from
+                        small.text-muted.d-block từ #{item.paymentSwitch.from == "vnpay" ? "VNPay" : "ZaloPay"}
                     td
                       case item.paymentStatus
                         when "unpaid"
