@@ -238,7 +238,7 @@ const composeHtml = (shot, imageBase64, clip, marks) => `<!doctype html><html><h
       ${m.label ? `<div class="num" style="left:${Math.max(2, m.x - 17)}px;top:${Math.max(2, m.y - 17)}px">${m.label}</div>` : ""}`).join("")}
   </div>
   <div class="panel">
-    <div class="brand">Questa · Trang quản trị</div>
+    <div class="brand">Questa Fashion · Trang quản trị</div>
     <h1>${escapeHtml(shot.title)}</h1>
     ${shot.callouts.map((c, i) => `
       <div class="item"><div class="n">${i + 1}</div>

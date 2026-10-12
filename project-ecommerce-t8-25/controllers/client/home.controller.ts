@@ -3,7 +3,10 @@ import { Request, Response } from 'express';
 import { getGeneral } from '../../configs/setting.config';
 import Product from '../../models/product.model';
 import Blog from '../../models/blog.model';
-import { pathAdmin } from '../../configs/variable.config';
+import { pathAdmin, siteInfo } from '../../configs/variable.config';
+import CategoryProduct from '../../models/category-product.model';
+import CategoryBlog from '../../models/categories-blog.model';
+import { buildSeo, homeJsonLd } from '../../helpers/seo.helper';
 
 import { getBlockListByTemplate, renderHTML } from '../../helpers/block.helper';
 
@@ -16,7 +19,14 @@ export const home = async (req: Request, res: Response) => {
 
   res.render("client/pages/home", {
     pageTitle: "Trang chủ",
-    blocksHtml: blocksHtml
+    blocksHtml: blocksHtml,
+    seo: buildSeo(res, {
+      title: `${siteInfo.name} – ${siteInfo.slogan}`,
+      fullTitle: true,
+      description: siteInfo.description,
+      index: true,
+      jsonLd: homeJsonLd(res)
+    })
   });
 }
 
@@ -44,10 +54,44 @@ export const sitemap = async (req: Request, res: Response) => {
       </url>
     `);
 
-    // Sản phẩm
+    // Tất cả sản phẩm + danh mục sản phẩm
+    urls.push(`
+      <url>
+        <loc>${domain}/product/category</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.9</priority>
+      </url>
+    `);
+    const categoryList = await CategoryProduct.find({ deleted: false, status: "active" }).select("slug updatedAt");
+    categoryList.forEach((item: any) => {
+      urls.push(`
+        <url>
+          <loc>${domain}/product/category/${item.slug}</loc>
+          <lastmod>${item.updatedAt.toISOString()}</lastmod>
+          <changefreq>weekly</changefreq>
+          <priority>0.8</priority>
+        </url>
+      `);
+    });
+
+    // Danh mục bài viết
+    const blogCategoryList = await CategoryBlog.find({ deleted: false, status: "active" }).select("slug updatedAt");
+    blogCategoryList.forEach((item: any) => {
+      urls.push(`
+        <url>
+          <loc>${domain}/article/category/${item.slug}</loc>
+          <lastmod>${item.updatedAt.toISOString()}</lastmod>
+          <changefreq>weekly</changefreq>
+          <priority>0.6</priority>
+        </url>
+      `);
+    });
+
+    // Sản phẩm (bỏ sản phẩm admin đặt không cho Google index)
     const productList = await Product.find({
       deleted: false,
-      status: "active"
+      status: "active",
+      "seo.robots.index": { $ne: false }
     }).select("slug updatedAt");
 
     productList.forEach(item => {
@@ -96,10 +140,18 @@ export const sitemap = async (req: Request, res: Response) => {
 
 
 export const robots = async (req: Request, res: Response) => {
-  const content = `
-    User-agent: *
-    Disallow: /${pathAdmin}/
-  `;
+  const settingGeneral = await getGeneral();
+  // Mỗi dòng phải bắt đầu ở đầu dòng; trang giỏ hàng/đăng nhập vẫn cho bot vào nhưng đã có thẻ noindex
+  const content = [
+    "User-agent: *",
+    `Disallow: /${pathAdmin}/`,
+    "Disallow: /dashboard/",
+    "Disallow: /checkout",
+    "Disallow: /order/",
+    "",
+    `Sitemap: ${settingGeneral.domainWebsite}/sitemap.xml`,
+    ""
+  ].join("\n");
 
   /*
     User-agent: * nghĩa là áp dụng cho tất cả bot tìm kiếm

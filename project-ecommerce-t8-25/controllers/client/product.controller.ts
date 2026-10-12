@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { buildSeo, productJsonLd } from '../../helpers/seo.helper';
+import { siteInfo } from '../../configs/variable.config';
 import CategoryProduct from '../../models/category-product.model';
 import Product from '../../models/product.model';
 import slugify from 'slugify';
@@ -230,7 +232,14 @@ export const productByCategory = async (req: Request, res: Response) => {
     categoryDetail: categoryDetail,
     productList: productList,
     pagination: pagination,
-    topRatedProducts: topRatedProducts
+    topRatedProducts: topRatedProducts,
+    seo: buildSeo(res, {
+      title: categoryDetail.name,
+      description: categoryDetail.description
+        || `Mua ${`${categoryDetail.name}`.toLowerCase()} tại ${siteInfo.name}: áo, quần, áo khoác và phụ kiện nam đơn giản, dễ phối, giao hàng toàn quốc.`,
+      image: categoryDetail.avatar,
+      index: true
+    })
   });
 }
 
@@ -431,6 +440,18 @@ export const detail = async (req: Request, res: Response) => {
     boughtTogetherProducts: boughtTogetherProducts,
     viewedProducts: viewedProducts,
     reviewList: reviewList,
-    seo: productDetail.seo
+    // SEO do admin đặt ở "Sửa SEO"; thiếu trường nào thì lấy từ thông tin sản phẩm
+    seo: buildSeo(res, {
+      title: productDetail.seo?.title || productDetail.name,
+      description: productDetail.seo?.description || productDetail.description,
+      keywords: productDetail.seo?.keywords,
+      image: productDetail.seo?.og?.image || productDetail.images?.[0],
+      ogTitle: productDetail.seo?.og?.title,
+      ogDescription: productDetail.seo?.og?.description,
+      type: "product",
+      index: productDetail.seo?.robots?.index !== false,
+      follow: productDetail.seo?.robots?.follow !== false,
+      jsonLd: [productJsonLd(res, productDetail, res.locals.canonicalUrl)]
+    })
   });
 }

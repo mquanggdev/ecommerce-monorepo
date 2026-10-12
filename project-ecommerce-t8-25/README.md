@@ -1,6 +1,6 @@
 # project-ecommerce-t8-25
 
-Ứng dụng chính của **Questa**: cửa hàng, trang quản trị, API, chat realtime (Socket.IO) và tích hợp bên thứ ba
+Ứng dụng chính của **Questa Fashion**: cửa hàng, trang quản trị, API, chat realtime (Socket.IO) và tích hợp bên thứ ba
 (VNPay, ZaloPay, GoShip, NDAMaps, Groq AI, Gmail SMTP, Google/Facebook OAuth).
 
 Kiến trúc, chức năng và các quyết định kỹ thuật: xem [README ở thư mục gốc](../README.md).
