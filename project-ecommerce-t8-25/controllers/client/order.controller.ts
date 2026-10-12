@@ -16,6 +16,7 @@ import { pointConfig } from '../../configs/variable.config';
 import AccountUser from '../../models/account-user.model';
 import { getApiPayment, getApiShipping, getGeneral } from '../../configs/setting.config';
 import { decreaseStock, findVariantIndex, increaseStock } from '../../helpers/stock.helper';
+import { PAYMENT_LINK_MINUTES, resolveUnpaidOnlineOrder } from '../../helpers/payment-query.helper';
 
 export const createPost = async (req: Request, res: Response) => {
   const dataFinal: any = {};
@@ -255,6 +256,7 @@ export const createPost = async (req: Request, res: Response) => {
         throw new Error(errorMessage);
       }
       couponClaimed = true;
+      dataFinal.couponId = couponId;
     }
 
     // Trường shippingMethod
@@ -395,11 +397,31 @@ export const success = async (req: Request, res: Response) => {
     res.redirect("/");
     return;
   }
-  
+
+  // ZaloPay luôn đưa khách về trang này, kể cả khi khách bấm hủy. Kèm theo là status + checksum ký bằng key2:
+  // chữ ký đúng và status khác 1 thì hỏi lại ZaloPay rồi chuyển đơn sang thanh toán khi nhận hàng
+  if(req.query.apptransid && req.query.checksum && orderDetail.paymentMethod === "zalopay" && orderDetail.paymentStatus === "unpaid") {
+    const apiPayment: any = await getApiPayment();
+    const q: any = req.query;
+    const checksumData = `${q.appid}|${q.apptransid}|${q.pmcid}|${q.bankcode}|${q.amount}|${q.discountamount}|${q.status}`;
+    const isValid = hmacSHA256(checksumData, `${apiPayment?.zaloPayKey2}`).toString() === `${q.checksum}`;
+    if(isValid && `${q.status}` !== "1") {
+      // Giao dịch này đã được ZaloPay ký xác nhận là không thành công; các lần tạo link khác (nếu có) vẫn hỏi lại cổng
+      await resolveUnpaidOnlineOrder(orderDetail, "failed", [`${q.apptransid}`]);
+    }
+  }
+
+  const orderAfter: any = await Order.findOne({ _id: orderDetail.id }).lean();
+  const isOnline = ["vnpay", "zalopay"].includes(orderAfter.paymentMethod);
+
   res.render("client/pages/order-success", {
     pageTitle: "Đặt hàng thành công!",
     orderCode: orderCode,
-    phone: phone
+    phone: phone,
+    // Đơn online chưa thanh toán đã được chuyển sang thanh toán khi nhận hàng
+    switchedToCOD: !!orderAfter.paymentSwitch?.from && orderAfter.paymentStatus === "unpaid",
+    // Đơn online chưa có kết quả thanh toán (cổng chưa báo về)
+    waitingPayment: isOnline && orderAfter.paymentStatus === "unpaid"
   });
 }
 
@@ -417,8 +439,8 @@ export const paymentZaloPay = async (req: Request, res: Response) => {
     return;
   }
 
-  // Đơn đã thanh toán thì không tạo link thanh toán mới
-  if(orderDetail.paymentStatus === "paid") {
+  // Chỉ tạo link cho đơn vẫn đang chờ thanh toán ZaloPay (chưa trả, chưa hủy, chưa chuyển sang thanh toán khi nhận hàng)
+  if(orderDetail.paymentStatus !== "unpaid" || orderDetail.paymentMethod !== "zalopay" || orderDetail.orderStatus === "cancelled") {
     res.redirect(`/order/success?orderCode=${orderCode}&phone=${phone}`);
     return;
   }
@@ -451,12 +473,18 @@ export const paymentZaloPay = async (req: Request, res: Response) => {
     description: `Thanh toán đơn hàng ${orderCode}`,
     bank_code: "",
     mac: "",
-    callback_url: `${settingGeneral.domainWebsite}/order/payment-zalopay-result`
+    callback_url: `${settingGeneral.domainWebsite}/order/payment-zalopay-result`,
+    expire_duration_seconds: PAYMENT_LINK_MINUTES * 60 // Link hết hạn, quá hạn thì đơn chuyển sang thanh toán khi nhận hàng
   };
 
   // appid|app_trans_id|appuser|amount|apptime|embeddata|item
   const data = config.app_id + "|" + order.app_trans_id + "|" + order.app_user + "|" + order.amount + "|" + order.app_time + "|" + order.embed_data + "|" + order.item;
   order.mac = hmacSHA256(data, config.key1).toString();
+
+  // Lưu mã giao dịch để sau này hỏi lại ZaloPay xem khách đã trả tiền chưa
+  await Order.updateOne({ _id: orderDetail.id }, {
+    $push: { paymentAttempts: { provider: "zalopay", ref: order.app_trans_id, createdAt: new Date() } }
+  });
 
   const response = await axios.post(config.endpoint, null, { params: order });
   res.redirect(response.data.order_url);
@@ -546,8 +574,8 @@ export const paymentVNPay = async (req: Request, res: Response) => {
     return;
   }
 
-  // Đơn đã thanh toán thì không tạo link thanh toán mới
-  if(orderDetail.paymentStatus === "paid") {
+  // Chỉ tạo link cho đơn vẫn đang chờ thanh toán VNPay (chưa trả, chưa hủy, chưa chuyển sang thanh toán khi nhận hàng)
+  if(orderDetail.paymentStatus !== "unpaid" || orderDetail.paymentMethod !== "vnpay" || orderDetail.orderStatus === "cancelled") {
     res.redirect(`/order/success?orderCode=${orderCode}&phone=${phone}`);
     return;
   }
@@ -584,6 +612,8 @@ export const paymentVNPay = async (req: Request, res: Response) => {
   vnp_Params['vnp_ReturnUrl'] = returnUrl;
   vnp_Params['vnp_IpAddr'] = ipAddr;
   vnp_Params['vnp_CreateDate'] = createDate;
+  // Link hết hạn, quá hạn thì đơn chuyển sang thanh toán khi nhận hàng
+  vnp_Params['vnp_ExpireDate'] = moment(date).add(PAYMENT_LINK_MINUTES, "minutes").format('YYYYMMDDHHmmss');
   if(bankCode !== null && bankCode !== ''){
     vnp_Params['vnp_BankCode'] = bankCode;
   }
@@ -598,6 +628,11 @@ export const paymentVNPay = async (req: Request, res: Response) => {
   vnp_Params['vnp_SecureHash'] = signed;
   vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
 
+  // Lưu mã giao dịch để sau này hỏi lại VNPay xem khách đã trả tiền chưa
+  await Order.updateOne({ _id: orderDetail.id }, {
+    $push: { paymentAttempts: { provider: "vnpay", ref: orderId, createDate: createDate, createdAt: new Date() } }
+  });
+
   res.redirect(vnpUrl);
 }
 
@@ -610,11 +645,12 @@ export const paymentVNPayResult = async (req: Request, res: Response) => {
   const amountVNPay = Number(req.query['vnp_Amount']);
   const [ phone, orderCode ] = txnRef.split('-');
 
-  const renderFailed = (message: string, code?: string) => {
+  const renderFailed = (message: string, code?: string, switchedToCOD: boolean = false) => {
     res.render("client/pages/order-payment-failed", {
       pageTitle: "Thanh toán không thành công",
       message: message,
-      orderCode: code
+      orderCode: code,
+      switchedToCOD: switchedToCOD
     });
   }
 
@@ -654,9 +690,19 @@ export const paymentVNPayResult = async (req: Request, res: Response) => {
     return;
   }
 
-  // Giao dịch thất bại hoặc bị hủy vẫn được VNPay ký, nên phải kiểm mã kết quả
+  // Giao dịch thất bại hoặc bị hủy vẫn được VNPay ký, nên phải kiểm mã kết quả.
+  // Không chuyển ngay theo mã trên URL (VD mã 07: đã trừ tiền nhưng bị nghi ngờ): hỏi lại VNPay rồi mới
+  // chuyển đơn sang thanh toán khi nhận hàng; chưa rõ thì để job xử lý sau
   if(responseCode !== "00" || transactionStatus !== "00") {
-    renderFailed("Giao dịch chưa được thanh toán hoặc đã bị hủy.", orderCode);
+    const outcome = await resolveUnpaidOnlineOrder(orderDetail, "failed");
+    if(outcome === "paid") {
+      const settingGeneral = await getGeneral();
+      res.redirect(`${settingGeneral.domainWebsite}/order/success?orderCode=${orderCode}&phone=${phone}`);
+      return;
+    }
+    const orderAfter: any = await Order.findOne({ _id: orderDetail.id }).select("paymentMethod paymentStatus").lean();
+    const switchedToCOD = orderAfter?.paymentMethod === "money" && orderAfter?.paymentStatus === "unpaid";
+    renderFailed("Giao dịch chưa được thanh toán hoặc đã bị hủy.", orderCode, switchedToCOD);
     return;
   }
 

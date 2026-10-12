@@ -69,6 +69,10 @@ block main
                   orderDetail.paymentMethod == 'zalopay' ? 'ZaloPay' :
                   ''
               )
+              if orderDetail.paymentSwitch && orderDetail.paymentSwitch.from
+                small.text-muted.d-block.mt-1
+                  | Chuyển từ #{orderDetail.paymentSwitch.from == 'vnpay' ? 'VNPay' : 'ZaloPay'} lúc #{orderDetail.paymentSwitch.at.toLocaleString('vi-VN')}
+                  | (#{orderDetail.paymentSwitch.reason == 'failed' ? 'khách hủy/lỗi ở cổng thanh toán' : 'quá hạn chưa thanh toán'})
           .col-md-4
             .mb-3
               label.form-label Trạng thái thanh toán
@@ -135,6 +139,14 @@ block main
         // Trạng thái đơn hàng
         // =====================
         h5.mt-4 Trạng thái đơn hàng
+        if orderDetail.orderStatus == "cancelled" && orderDetail.paymentStatus == "paid"
+          .alert.alert-danger
+            | Đơn đã hủy nhưng khách đã thanh toán — cần hoàn tiền cho khách.
+        if orderDetail.cancelledAt
+          p.text-muted.mb-2
+            | #{orderDetail.orderStatus == "returned" ? "Trả hàng" : "Hủy"} lúc #{orderDetail.cancelledAt.toLocaleString('vi-VN')} bởi #{orderDetail.cancelledBy == "user" ? "khách hàng" : "quản trị viên"}
+            if orderDetail.cancelReason
+              |  — Lý do: #{orderDetail.cancelReason}
         .row
           .col-md-6
             .mb-3

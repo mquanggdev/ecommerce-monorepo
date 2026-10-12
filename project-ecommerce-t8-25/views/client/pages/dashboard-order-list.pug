@@ -1,5 +1,6 @@
 extends ../layouts/default.pug
 include ../mixins/page-banner.pug
+include ../mixins/order-cancel.pug
 
 block main
   //
@@ -48,13 +49,7 @@ block main
                         td #{order.createdAt.toLocaleString("vi-VN")}
                         td #{order.total.toLocaleString("vi-VN")}đ
                         td
-                          case order.paymentMethod
-                            when "money"
-                              | Tiền mặt
-                            when "vnpay"
-                              | VNPay
-                            when "zalopay"
-                              | ZaloPay
+                          +payment-method-name(order)
                         td
                           div Thanh toán: 
                             case order.paymentStatus
@@ -115,7 +110,10 @@ block main
                                 stroke-linecap="round"
                                 )
                             | Đánh giá
+                          +order-cancel-button(order)
   //
     ============================
     DSHBOARD END
     =============================
+
+  +order-cancel-modal(cancelReasonList)

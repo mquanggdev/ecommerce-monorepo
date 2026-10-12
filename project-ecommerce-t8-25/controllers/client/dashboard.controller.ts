@@ -9,6 +9,8 @@ import axios from 'axios';
 import Order from '../../models/order.model';
 import { domainCDN } from '../../configs/variable.config';
 import Review from '../../models/review.model';
+import { cancelOrderByUser, cancelReasonList } from '../../helpers/order-cancel.helper';
+import { queryOrderPayment, recordGatewayPayment } from '../../helpers/payment-query.helper';
 
 export const dashboard = async (req: Request, res: Response) => {
   const userId = res.locals.accountUser.id;
@@ -411,7 +413,8 @@ export const orderList = async (req: Request, res: Response) => {
   
   res.render("client/pages/dashboard-order-list", {
     pageTitle: "Danh sách đơn hàng",
-    orderList: orderList
+    orderList: orderList,
+    cancelReasonList: cancelReasonList
   });
 }
 
@@ -433,10 +436,100 @@ export const orderDetail = async (req: Request, res: Response) => {
     
     res.render("client/pages/dashboard-order-detail", {
       pageTitle: `Chi tiết đơn hàng: ${orderDetail.code}`,
-      orderDetail: orderDetail
+      orderDetail: orderDetail,
+      cancelReasonList: cancelReasonList
     });
   } catch (error) {
     res.redirect('/dashboard/order/list');
+  }
+}
+
+export const orderCancelPatch = async (req: Request, res: Response) => {
+  try {
+    const userId = res.locals.accountUser.id;
+    const orderId = `${req.params.id}`;
+
+    const orderDetail: any = await Order.findOne({
+      _id: orderId,
+      userId: userId,
+      deleted: false
+    });
+
+    if(!orderDetail) {
+      res.json({
+        code: "error",
+        message: "Không tìm thấy đơn hàng!"
+      });
+      return;
+    }
+
+    if(orderDetail.orderStatus === "cancelled") {
+      res.json({
+        code: "error",
+        message: "Đơn hàng đã được hủy trước đó!"
+      });
+      return;
+    }
+
+    if(orderDetail.paymentStatus !== "unpaid") {
+      res.json({
+        code: "error",
+        message: "Đơn hàng đã thanh toán. Vui lòng liên hệ shop để hủy và hoàn tiền!"
+      });
+      return;
+    }
+
+    if(orderDetail.orderStatus !== "pending") {
+      res.json({
+        code: "error",
+        message: "Đơn hàng đã được shop xác nhận, vui lòng liên hệ shop để hủy!"
+      });
+      return;
+    }
+
+    // Đơn vẫn đang chờ thanh toán online: hỏi lại cổng, khách có thể vừa trả tiền mà web chưa nhận được kết quả
+    if(["vnpay", "zalopay"].includes(orderDetail.paymentMethod)) {
+      const result = await queryOrderPayment(orderDetail);
+      if(result.status === "paid") {
+        await recordGatewayPayment(orderDetail, result);
+        res.json({
+          code: "error",
+          message: "Đơn hàng đã được thanh toán. Vui lòng liên hệ shop để hủy và hoàn tiền!"
+        });
+        return;
+      }
+      if(result.status === "unknown") {
+        res.json({
+          code: "error",
+          message: "Chưa kiểm tra được trạng thái thanh toán của đơn, vui lòng thử lại sau ít phút!"
+        });
+        return;
+      }
+    }
+
+    const note = `${req.body.note || ""}`.trim();
+    const reason = note ? `${req.body.reason}: ${note}` : `${req.body.reason}`;
+
+    const cancelled = await cancelOrderByUser(orderId, userId, reason);
+    if(!cancelled) {
+      // Trạng thái vừa thay đổi giữa lúc kiểm tra và lúc hủy (admin xác nhận, cổng báo thanh toán...)
+      res.json({
+        code: "error",
+        message: "Trạng thái đơn hàng vừa thay đổi, vui lòng tải lại trang!"
+      });
+      return;
+    }
+
+    res.json({
+      code: "success",
+      message: `Đã hủy đơn hàng ${cancelled.code}!`
+    });
+  } catch (error) {
+    console.error(error);
+    res.json({
+      code: "error",
+      message: "Không hủy được đơn hàng, vui lòng thử lại!"
+    });
   }
 }
 

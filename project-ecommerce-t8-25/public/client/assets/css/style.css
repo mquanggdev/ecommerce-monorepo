@@ -12815,3 +12815,123 @@ button:disabled {
   padding: 0;
   background: transparent;
 }
+
+/* Hủy đơn hàng và đơn thanh toán online chưa hoàn tất */
+.order_notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  max-width: 640px;
+  margin: 0 auto 30px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: #1b4f8c0f;
+  border: 1px solid #1b4f8c33;
+  color: var(--colorBlack);
+  text-align: left;
+  line-height: 1.6;
+}
+
+.order_notice i {
+  color: var(--themeColoeOne);
+  font-size: 18px;
+  margin-top: 4px;
+}
+
+.order_notice a {
+  color: var(--themeColoeOne);
+  text-decoration: underline;
+}
+
+.order_switch_note {
+  color: var(--paraColor);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.dashboard_order_table .order_switch_note {
+  display: block;
+}
+
+.checkout_payment_note {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--paraColor);
+  margin: 4px 0 18px;
+}
+
+.dashboard_invoice_footer .order_detail_actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.dashboard_invoice_footer .order_detail_actions a,
+.dashboard_invoice_footer .order_contact_note a {
+  position: static;
+}
+
+.dashboard_invoice_footer .order_contact_note {
+  width: 100%;
+  margin-top: 15px;
+  color: var(--colorRed);
+}
+
+.dashboard_order_table table tr td .order_cancel_btn {
+  margin: 3px 0;
+  padding: 0;
+  background: none;
+  color: var(--colorRed);
+  font-size: 16px;
+}
+
+.dashboard_order_table table tr td .order_cancel_btn:hover {
+  text-decoration: underline;
+}
+
+.order_cancel_modal .modal-title {
+  font-size: 20px;
+}
+
+.order_cancel_modal .form-check {
+  margin-bottom: 6px;
+}
+
+/* Template đặt padding chung cho input làm nút chọn bị méo */
+.order_cancel_modal .form-check-input {
+  padding: 0;
+}
+
+.order_cancel_warning {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--colorRed);
+}
+
+.order_cancel_modal [cancel-order-error] .state-box {
+  margin-top: 12px;
+}
+
+.order_cancel_actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.order_cancel_actions .order_cancel_submit {
+  background: var(--colorRed);
+}
+
+/* Nhóm phân loại khách chưa chọn khi bấm Thêm vào giỏ / Mua ngay */
+.details_single_variant.variant_required .variant_title {
+  color: var(--colorRed);
+}
+
+.details_single_variant.variant_required ul {
+  outline: 1px dashed var(--colorRed);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
