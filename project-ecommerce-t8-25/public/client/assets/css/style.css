@@ -12924,3 +12924,14 @@ button:disabled {
 .order_cancel_actions .order_cancel_submit {
   background: var(--colorRed);
 }
+
+/* Nhóm phân loại khách chưa chọn khi bấm Thêm vào giỏ / Mua ngay */
+.details_single_variant.variant_required .variant_title {
+  color: var(--colorRed);
+}
+
+.details_single_variant.variant_required ul {
+  outline: 1px dashed var(--colorRed);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
