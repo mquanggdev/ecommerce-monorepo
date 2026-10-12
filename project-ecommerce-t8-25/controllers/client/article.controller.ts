@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { buildSeo } from '../../helpers/seo.helper';
+import { siteInfo } from '../../configs/variable.config';
 
 import CategoryBlog from "../../models/categories-blog.model";
 import Blog from "../../models/blog.model";
@@ -83,7 +85,13 @@ export const articleByCategory = async (req: Request, res: Response) => {
       pageTitle: categoryDetail.name,
       categoryDetail: categoryDetail,
       articleList: articleList,
-      pagination: pagination
+      pagination: pagination,
+      seo: buildSeo(res, {
+        title: `${categoryDetail.name}`,
+        description: categoryDetail.description || `Bài viết ${`${categoryDetail.name}`.toLowerCase()} — mẹo phối đồ và chọn trang phục nam từ ${siteInfo.name}.`,
+        image: categoryDetail.avatar || undefined,
+        index: true
+      })
     });
   } catch (error) {
     console.log(error);
@@ -151,5 +159,12 @@ export const detail = async (req: Request, res: Response) => {
   res.render("client/pages/article-detail", {
     pageTitle: articleDetail.name,
     articleDetail: articleDetail,
+    seo: buildSeo(res, {
+      title: articleDetail.name,
+      description: articleDetail.description || articleDetail.content,
+      image: articleDetail.avatar,
+      type: "article",
+      index: true
+    })
   });
 }

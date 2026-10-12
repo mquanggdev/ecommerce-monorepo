@@ -2,6 +2,16 @@ export const pathAdmin = "admin";
 export const domainCDN = process.env.CDN_URL || "http://localhost:4000";
 export const domainPublic = process.env.CDN_PUBLIC || domainCDN;
 
+// Thông tin thương hiệu dùng cho SEO (tiêu đề, mô tả, ảnh chia sẻ, dữ liệu cấu trúc)
+export const siteInfo = {
+  name: "Questa",
+  slogan: "Thời trang nam đơn giản, dễ phối",
+  description: "Questa — thời trang nam đơn giản, dễ phối và bền bỉ: áo thun, sơ mi, quần jean, kaki, áo khoác và phụ kiện cho đi làm lẫn đi chơi. Giao hàng toàn quốc.",
+  telephone: "+84918079395",
+  shareImage: "/client/assets/images/questa-share.png", // 1200x630
+  logo: "/client/assets/images/questa-logo-512.png"
+};
+
 // Tài khoản khách dùng thử công khai trong README: không cho đổi mật khẩu/thông tin cá nhân/ảnh đại diện
 export const demoUserEmail = "demo@quangtm.site";
 
