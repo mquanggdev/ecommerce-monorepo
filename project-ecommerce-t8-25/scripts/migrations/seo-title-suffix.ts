@@ -1,5 +1,5 @@
 // Bỏ đuôi "| Thời trang nam" trong tiêu đề SEO của sản phẩm (từ dữ liệu mẫu cũ).
-// Layout giờ tự thêm "| Questa", giữ đuôi cũ sẽ thành "… | Thời trang nam | Questa".
+// Layout giờ tự thêm "| Questa Fashion", giữ đuôi cũ sẽ thành "… | Thời trang nam | Questa Fashion".
 // Mặc định chỉ in danh sách sẽ đổi; thêm --apply để ghi. Chạy lại nhiều lần không sao.
 //   node -r ts-node/register scripts/migrations/seo-title-suffix.ts [--apply]
 import "dotenv/config";

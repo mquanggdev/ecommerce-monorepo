@@ -3,7 +3,7 @@ import { domainPublic, siteInfo } from "../configs/variable.config";
 
 type SeoOptions = {
   title: string,
-  fullTitle?: boolean, // true: dùng nguyên tiêu đề, không thêm "| Questa"
+  fullTitle?: boolean, // true: dùng nguyên tiêu đề, không thêm "| Questa Fashion"
   description?: string,
   keywords?: string[],
   image?: string,
@@ -15,7 +15,7 @@ type SeoOptions = {
   jsonLd?: object[]
 };
 
-// Tiêu đề có tên thương hiệu: "Áo thun | Questa" (đã có chữ Questa thì giữ nguyên)
+// Tiêu đề có tên thương hiệu: "Áo thun | Questa Fashion" (đã có tên thương hiệu thì giữ nguyên)
 export const withBrand = (title: string): string => {
   const text = `${title || ""}`.trim();
   if(!text) return siteInfo.name;

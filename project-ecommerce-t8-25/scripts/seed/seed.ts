@@ -161,7 +161,7 @@ const seedProducts = async (attributeIds: { top: string, pants: string, color: s
       search: toSearch(product.name),
       tags: product.tags,
       seo: {
-        title: product.name, // Layout tự thêm "| Questa"
+        title: product.name, // Layout tự thêm "| Questa Fashion"
         description: product.description,
         keywords: product.tags,
         robots: { index: true, follow: true },

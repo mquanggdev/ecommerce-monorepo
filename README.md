@@ -1,4 +1,4 @@
-# Questa — Hệ thống thương mại điện tử thời trang nam
+# Questa Fashion — Hệ thống thương mại điện tử thời trang nam
 
 **Demo:** https://quangtm.site &nbsp;·&nbsp; **Tác giả:** Trần Minh Quang — Backend / Fullstack Developer
 
@@ -97,7 +97,7 @@ các tương tác động (giỏ hàng, phí ship, chat...) dùng `fetch` và So
 - **Tài khoản:** đăng ký/đăng nhập, Google/Facebook OAuth, quên mật khẩu bằng OTP qua email,
   theo dõi đơn, **tự hủy đơn** đang chờ xác nhận (popup xác nhận, chọn lý do), đánh giá sản phẩm kèm ảnh (chỉ với đơn đã giao thành công).
 - **Chat trực tuyến** với nhân viên: gửi file/ảnh, trạng thái "đang nhập", đánh giá cuộc chat.
-- **SEO:** mỗi trang công khai có tiêu đề kèm tên thương hiệu, mô tả, ảnh chia sẻ (Open Graph), canonical URL; dữ liệu cấu trúc `WebSite`/`Organization` (tên website "Questa" trên Google) và `Product` (giá, còn hàng); trang riêng tư mặc định `noindex`; `sitemap.xml` gồm trang chủ, danh mục, sản phẩm, bài viết; `robots.txt` khai báo sitemap.
+- **SEO:** mỗi trang công khai có tiêu đề kèm tên thương hiệu, mô tả, ảnh chia sẻ (Open Graph), canonical URL; dữ liệu cấu trúc `WebSite`/`Organization` (tên website "Questa Fashion" trên Google) và `Product` (giá, còn hàng); trang riêng tư mặc định `noindex`; `sitemap.xml` gồm trang chủ, danh mục, sản phẩm, bài viết; `robots.txt` khai báo sitemap.
 
 ### Quản trị
 - **Dashboard** (MongoDB aggregation, theo giờ Việt Nam): biểu đồ doanh thu theo **giờ / ngày / tháng** so với kỳ trước,

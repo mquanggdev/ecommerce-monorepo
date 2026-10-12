@@ -1,6 +1,6 @@
 # file-manager
 
-Service lưu và phục vụ ảnh/file upload của **Questa**, tách riêng khỏi ứng dụng chính.
+Service lưu và phục vụ ảnh/file upload của **Questa Fashion**, tách riêng khỏi ứng dụng chính.
 
 | Route | Ai gọi | Bảo vệ |
 |---|---|---|
