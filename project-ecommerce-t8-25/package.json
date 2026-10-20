@@ -10,7 +10,7 @@
     "build": "tsc --outDir dist",
     "seed": "node -r ts-node/register scripts/seed/seed.ts",
     "seed:images": "node -r ts-node/register scripts/seed/download-images.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test:e2e": "node --test --test-concurrency=1 -r ts-node/register/transpile-only tests/e2e/order-flow.e2e.ts"
   },
   "author": "",
   "license": "ISC",
