@@ -22,7 +22,8 @@ block main
               div(class="order_notice")
                 i.far.fa-bookmark
                 div
-                  | Hãy lưu lại mã đơn <b>#{orderCode}</b>. Bạn có thể xem hoặc hủy đơn ở trang <a href="/order/lookup">Tra cứu đơn hàng</a> bằng mã đơn và số điện thoại đặt hàng.
+                  | Đơn <b>#{orderCode}</b> đã được lưu trên thiết bị này — xem lại hoặc hủy ở trang <a href="/order/lookup">Tra cứu đơn hàng</a>.
+                  | Nếu dùng máy khác, tra cứu bằng mã đơn và số điện thoại đặt hàng.
             if switchedToCOD
               div(class="order_notice")
                 i.far.fa-info-circle

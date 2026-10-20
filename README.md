@@ -94,7 +94,7 @@ các tương tác động (giỏ hàng, phí ship, chat...) dùng `fetch` và So
 - **Đặt hàng:** sổ địa chỉ chọn trên bản đồ, **phí ship thật** từ nhiều hãng (GoShip), mã giảm giá,
   **điểm tích lũy** (trừ vào đơn, cộng sau khi thanh toán), thanh toán COD / **VNPay** / **ZaloPay**, xuất **hóa đơn PDF**.
   Thanh toán online không hoàn tất thì đơn **tự chuyển sang thanh toán khi nhận hàng** (có hỏi lại cổng trước khi chuyển).
-- **Mua không cần tài khoản:** khách vãng lai đặt hàng (chỉ thanh toán khi nhận hàng), **tra cứu và tự hủy đơn** bằng mã đơn + số điện thoại; có giới hạn chống đơn ảo.
+- **Mua không cần tài khoản:** khách vãng lai đặt hàng (chỉ thanh toán khi nhận hàng), trình duyệt tự nhớ đơn để **xem lại và tự hủy**, máy khác tra cứu bằng mã đơn + số điện thoại; có giới hạn chống đơn ảo.
 - **Tài khoản:** đăng ký/đăng nhập, Google/Facebook OAuth, quên mật khẩu bằng OTP qua email,
   theo dõi đơn, **tự hủy đơn** đang chờ xác nhận (popup xác nhận, chọn lý do), đánh giá sản phẩm kèm ảnh (chỉ với đơn đã giao thành công).
 - **Chat trực tuyến** với nhân viên: gửi file/ảnh, trạng thái "đang nhập", đánh giá cuộc chat.
@@ -302,12 +302,16 @@ Cho mua không cần tài khoản thì phải giải quyết: khách xem/hủy �
 **Giải quyết.**
 - Khách vãng lai **chỉ thanh toán khi nhận hàng** (ẩn VNPay/ZaloPay, server cũng chặn): hệ thống chưa có hoàn tiền,
   nên không giữ tiền của người khó đối soát; đổi lại rủi ro "bom hàng" giảm bằng bước admin xác nhận đơn + nhãn "Khách vãng lai".
-- **Tra cứu bằng mã đơn + số điện thoại** gửi qua POST; đúng thì đặt cookie JWT 30 phút chứa id đơn — số điện thoại không nằm trên URL,
-  API hủy đọc cookie chứ không nhận lại mã/số. Thông báo sai không nói rõ sai phần nào; 10 lần tra cứu / 15 phút / IP.
+- **"Đơn hàng trên thiết bị này":** khách khó nhớ mã đơn, nên đặt hàng xong trình duyệt tự nhớ đơn trong cookie JWT có chữ ký
+  (`httpOnly`, 90 ngày, tối đa 20 đơn) — mở trang tra cứu là thấy danh sách, không hiện địa chỉ/số điện thoại; có nút xóa danh sách cho máy dùng chung.
+  Không chọn tra cứu bằng tên + số điện thoại vì người quen nào cũng biết hai thông tin đó.
+- **Máy khác: tra cứu bằng mã đơn + số điện thoại** gửi qua POST; đúng thì đặt cookie JWT 30 phút và thêm đơn vào danh sách trên máy đó.
+  Xem/hủy theo `/order/lookup/detail/:id` chỉ khi id nằm trong một trong hai cookie đã ký — đổi id trên URL hay sửa cookie đều bị từ chối.
+  Thông báo sai không nói rõ sai phần nào; 10 lần tra cứu / 15 phút / IP.
 - **Tự hủy** dùng lại hàm hủy dùng chung (lệnh cập nhật có điều kiện, hoàn kho/trả mã đúng một lần), chỉ đổi điều kiện chủ đơn.
 - **Chống đơn ảo:** 5 lần đặt / 15 phút / IP (bỏ qua khách đã đăng nhập) và tối đa 3 đơn chờ / số điện thoại — kiểm tra trước bước trừ kho.
 
-📍 `controllers/client/order.controller.ts` (`lookup*`, `createPost`), `middlewares/rate-limit.middleware.ts`, `helpers/order-cancel.helper.ts`
+📍 `controllers/client/order.controller.ts` (`lookup*`, `createPost`), `helpers/guest-order.helper.ts`, `middlewares/rate-limit.middleware.ts`, `helpers/order-cancel.helper.ts`
 
 ---
 

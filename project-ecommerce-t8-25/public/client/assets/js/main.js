@@ -2845,10 +2845,27 @@ if(formOrderLookup) {
         notyf.error(data.message);
         return;
       }
-      // Kết quả tra cứu được giữ trong cookie, trang chi tiết đọc từ đó (số điện thoại không nằm trên đường dẫn)
-      window.location.href = "/order/lookup/detail";
+      // Quyền xem đơn được giữ trong cookie, số điện thoại không nằm trên đường dẫn
+      window.location.href = data.redirect || "/order/lookup/detail";
       return true;
     }, "Đang tra cứu...");
+  });
+}
+
+// Xóa danh sách "Đơn hàng trên thiết bị này" (máy dùng chung); đơn hàng vẫn còn, tra cứu bằng mã vẫn được
+const buttonForgetDeviceOrders = document.querySelector("[button-forget-device-orders]");
+if(buttonForgetDeviceOrders) {
+  buttonForgetDeviceOrders.addEventListener("click", () => {
+    if(!confirm("Xóa danh sách đơn hàng khỏi thiết bị này? Đơn hàng không bị hủy, bạn vẫn tra cứu được bằng mã đơn và số điện thoại.")) return;
+    sendWithButton(buttonForgetDeviceOrders, `/order/lookup/forget`, jsonOptions("POST", {}), data => {
+      if(data.code == "error") {
+        notyf.error(data.message);
+        return;
+      }
+      drawNotify("success", data.message);
+      window.location.reload();
+      return true;
+    }, "Đang xóa...");
   });
 }
 // Hết Tra cứu đơn hàng
