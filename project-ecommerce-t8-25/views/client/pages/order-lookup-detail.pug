@@ -22,7 +22,7 @@ block main
               a(
                 href="/order/lookup"
                 class="back_btn common_btn"
-                ) Tra cứu đơn khác
+                ) Danh sách đơn
             div(class="dashboard_order_invoice_area")
               +order-invoice(orderDetail)
                 div(class="dashboard_invoice_footer")
@@ -37,7 +37,7 @@ block main
                       class="common_btn"
                       ) In hóa đơn
                     if isGuestOrder
-                      +order-cancel-button(orderDetail, "common_btn", "/order/lookup/cancel")
+                      +order-cancel-button(orderDetail, "common_btn", `/order/lookup/cancel/${orderDetail.id}`)
 
   if isGuestOrder
     +order-cancel-modal(cancelReasonList)

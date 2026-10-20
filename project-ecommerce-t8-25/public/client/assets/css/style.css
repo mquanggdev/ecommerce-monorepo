@@ -12975,3 +12975,37 @@ button:disabled {
   color: var(--themeColoeOne);
   text-decoration: underline;
 }
+
+/* "Đơn hàng trên thiết bị này": trên điện thoại mỗi đơn là một thẻ, không phải kéo ngang bảng */
+@media (max-width: 575.98px) {
+  .device_orders .dashboard_order_table table thead {
+    display: none;
+  }
+
+  .device_orders .dashboard_order_table table,
+  .device_orders .dashboard_order_table table tbody,
+  .device_orders .dashboard_order_table table tr,
+  .device_orders .dashboard_order_table table td {
+    display: block;
+    width: 100%;
+  }
+
+  .device_orders .dashboard_order_table table tr {
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .device_orders .dashboard_order_table table tr td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+    padding: 4px 14px;
+    border: 0;
+  }
+
+  .device_orders .dashboard_order_table table tr td[data-label]::before {
+    content: attr(data-label);
+    color: var(--colorBlack);
+  }
+}

@@ -9,15 +9,54 @@ block main
     "/order/lookup"
   )
 
-  //- Tra cứu đơn bằng mã đơn + số điện thoại (dành cho khách mua không đăng nhập)
+  //- Khách vãng lai: đơn đã đặt/tra cứu trên thiết bị này (cookie ghi nhớ) + tra cứu bằng mã đơn + số điện thoại (máy khác)
   section(class="sign_in mt_100 mb_100")
     .container
+      if deviceOrders && deviceOrders.length > 0
+        .row.justify-content-center.mb-5
+          .col-xl-9
+            div(class="dashboard_content device_orders")
+              h3(class="dashboard_title")
+                | Đơn hàng trên thiết bị này
+                button(type="button" class="back_btn common_btn" button-forget-device-orders) Xóa danh sách khỏi thiết bị này
+              div(class="dashboard_order_table")
+                .table-responsive
+                  table
+                    thead
+                      tr
+                        th Mã ĐH
+                        th Ngày đặt
+                        th Tổng tiền
+                        th Trạng thái
+                        th
+                    tbody
+                      each order in deviceOrders
+                        tr
+                          td(data-label="Mã ĐH") #{order.code}
+                          td(data-label="Ngày đặt") #{order.createdAt.toLocaleString("vi-VN")}
+                          td(data-label="Tổng tiền") #{order.total.toLocaleString("vi-VN")}đ
+                          td(data-label="Trạng thái")
+                            case order.orderStatus
+                              when "pending"
+                                | Chờ xác nhận
+                              when "confirmed"
+                                | Đã xác nhận
+                              when "shipping"
+                                | Đang giao
+                              when "completed"
+                                | Giao thành công
+                              when "cancelled"
+                                | Đã hủy
+                              when "returned"
+                                | Đã trả hàng
+                          td
+                            a(href=`/order/lookup/detail/${order._id}`) Xem chi tiết
       .row.justify-content-center
         .col-xxl-5.col-lg-7.col-xl-6.col-md-10
           div(class="sign_in_form")
-            h3 #{pageTitle}
+            h3 #{deviceOrders && deviceOrders.length > 0 ? "Tra cứu đơn khác" : pageTitle}
             p(class="order_lookup_intro")
-              | Nhập mã đơn hàng và số điện thoại đã dùng khi đặt hàng. Mã đơn có trên trang "Đặt hàng thành công" và hóa đơn.
+              | Đơn đặt trên thiết bị này được ghi nhớ tự động. Đặt trên máy khác thì nhập mã đơn hàng và số điện thoại đã dùng khi đặt hàng (mã đơn có trên trang "Đặt hàng thành công" và hóa đơn).
             form(form-order-lookup)
               .row
                 .col-xl-12

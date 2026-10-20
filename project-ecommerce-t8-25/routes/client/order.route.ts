@@ -25,7 +25,10 @@ router.get('/export-pdf', orderController.exportPdf);
 router.get('/lookup', orderController.lookup);
 router.post('/lookup', orderLookupLimiter, orderValidate.lookupPost, orderController.lookupPost);
 router.get('/lookup/detail', orderController.lookupDetail);
+router.get('/lookup/detail/:id', orderController.lookupDetail);
+router.post('/lookup/forget', orderController.lookupForgetPost);
 router.patch('/lookup/cancel', dashboardValidate.orderCancelPatch, orderController.lookupCancelPatch);
+router.patch('/lookup/cancel/:id', dashboardValidate.orderCancelPatch, orderController.lookupCancelPatch);
 
 
 

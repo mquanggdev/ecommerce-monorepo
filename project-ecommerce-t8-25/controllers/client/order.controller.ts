@@ -17,8 +17,8 @@ import AccountUser from '../../models/account-user.model';
 import { getApiPayment, getApiShipping, getGeneral } from '../../configs/setting.config';
 import { decreaseStock, findVariantIndex, increaseStock } from '../../helpers/stock.helper';
 import { PAYMENT_LINK_MINUTES, resolveUnpaidOnlineOrder } from '../../helpers/payment-query.helper';
-import jwt from 'jsonwebtoken';
 import { cancelOrderByUser, cancelReasonList } from '../../helpers/order-cancel.helper';
+import { canAccessGuestOrder, forgetDeviceOrders, getDeviceOrderIds, getLookupOrderId, rememberGuestOrder, saveDeviceOrderIds, setLookupOrder } from '../../helpers/guest-order.helper';
 
 // Số đơn vãng lai đang chờ xác nhận tối đa cho một số điện thoại
 const MAX_PENDING_GUEST_ORDERS = 3;
@@ -268,6 +268,7 @@ export const createPost = async (req: Request, res: Response) => {
   // Từ đây nếu có lỗi (GoShip, lưu đơn...) thì phải hoàn lại kho, lượt dùng mã giảm giá và điểm đã giữ
   let couponClaimed = false;
   let pointClaimed = 0;
+  let createdOrderId = "";
   let errorMessage = "Không thể tạo đơn hàng, vui lòng thử lại!";
   try {
     // Giữ một lượt dùng mã giảm giá (nguyên tử: hai đơn cùng lúc không thể vượt usageLimit)
@@ -386,6 +387,7 @@ export const createPost = async (req: Request, res: Response) => {
     // Lưu dữ liệu vào CSDL
     const newRecord = new Order(dataFinal);
     await newRecord.save();
+    createdOrderId = newRecord.id;
   } catch (error: any) {
     console.error("Tạo đơn hàng thất bại:", error?.message);
     await restoreStock();
@@ -401,6 +403,11 @@ export const createPost = async (req: Request, res: Response) => {
       message: errorMessage
     });
     return;
+  }
+
+  // Khách vãng lai: trình duyệt ghi nhớ đơn để xem lại/hủy ở trang tra cứu mà không cần nhớ mã đơn
+  if(isGuest) {
+    rememberGuestOrder(req, res, createdOrderId);
   }
 
   res.json({
@@ -830,34 +837,37 @@ function sortObject(obj: any) {
   return sorted;
 }
 
-// ===== Tra cứu đơn hàng bằng mã đơn + số điện thoại (khách vãng lai) =====
-// Tra cứu đúng thì đặt cookie ngắn hạn chứa id đơn; trang chi tiết và API hủy đọc cookie này,
-// nên số điện thoại không nằm trên đường dẫn và không phải gửi lại.
-const LOOKUP_COOKIE = "orderLookup";
-const LOOKUP_MINUTES = 30;
-
-// Id đơn từ cookie tra cứu, hoặc null nếu không có / hết hạn / bị sửa
-const getLookupOrderId = (req: Request): string | null => {
-  try {
-    const decoded = jwt.verify(`${req.cookies[LOOKUP_COOKIE]}`, `${process.env.JWT_SECRET}`) as jwt.JwtPayload;
-    return decoded.purpose === "order-lookup" ? `${decoded.orderId}` : null;
-  } catch (error) {
-    return null;
-  }
-}
+// ===== Tra cứu đơn hàng (khách vãng lai) =====
+// Hai cách: danh sách "Đơn hàng trên thiết bị này" (cookie ghi nhớ) và tra cứu bằng mã đơn + số điện thoại (máy khác).
+// Quyền xem/hủy kiểm bằng cookie có chữ ký (helpers/guest-order.helper.ts), số điện thoại không nằm trên đường dẫn.
 
 export const lookup = async (req: Request, res: Response) => {
+  // Đơn vãng lai đã ghi nhớ trên thiết bị (bỏ đơn đã bị xóa khỏi cookie)
+  const deviceOrderIds = getDeviceOrderIds(req);
+  let deviceOrders: any[] = [];
+  if(deviceOrderIds.length > 0) {
+    deviceOrders = await Order
+      .find({ _id: { $in: deviceOrderIds }, userId: "", deleted: false })
+      .select("code createdAt total orderStatus paymentStatus")
+      .sort({ createdAt: "desc" })
+      .lean();
+    if(deviceOrders.length !== deviceOrderIds.length) {
+      saveDeviceOrderIds(res, deviceOrders.map(order => `${order._id}`));
+    }
+  }
+
   res.render("client/pages/order-lookup", {
-    pageTitle: "Tra cứu đơn hàng"
+    pageTitle: "Tra cứu đơn hàng",
+    deviceOrders: deviceOrders
   });
 }
 
 export const lookupPost = async (req: Request, res: Response) => {
-  const orderDetail = await Order.findOne({
+  const orderDetail: any = await Order.findOne({
     code: `${req.body.code}`.trim().toUpperCase(),
     phone: `${req.body.phone}`.trim(),
     deleted: false
-  }).select("_id");
+  }).select("_id userId");
 
   // Không nói rõ sai mã hay sai số điện thoại để không dò được
   if(!orderDetail) {
@@ -868,25 +878,30 @@ export const lookupPost = async (req: Request, res: Response) => {
     return;
   }
 
-  const token = jwt.sign(
-    { orderId: orderDetail.id, purpose: "order-lookup" },
-    `${process.env.JWT_SECRET}`,
-    { expiresIn: `${LOOKUP_MINUTES}m` }
-  );
-  res.cookie(LOOKUP_COOKIE, token, {
-    httpOnly: true,
-    maxAge: LOOKUP_MINUTES * 60 * 1000,
-    sameSite: "strict"
-  });
+  setLookupOrder(res, orderDetail.id);
+  // Đơn vãng lai: ghi nhớ trên thiết bị này để lần sau không phải nhập lại
+  if(!orderDetail.userId) {
+    rememberGuestOrder(req, res, orderDetail.id);
+  }
 
   res.json({
     code: "success",
-    message: "Đã tìm thấy đơn hàng!"
+    message: "Đã tìm thấy đơn hàng!",
+    redirect: `/order/lookup/detail/${orderDetail.id}`
   });
 }
 
+// Id đơn được phép xem/hủy: theo :id trên đường dẫn (kiểm quyền), hoặc đơn vừa tra cứu (đường dẫn cũ không có id)
+const resolveLookupOrderId = (req: Request): string | null => {
+  const paramId = req.params.id ? `${req.params.id}` : "";
+  if(paramId) {
+    return canAccessGuestOrder(req, paramId) ? paramId : null;
+  }
+  return getLookupOrderId(req);
+}
+
 export const lookupDetail = async (req: Request, res: Response) => {
-  const orderId = getLookupOrderId(req);
+  const orderId = resolveLookupOrderId(req);
   const orderDetail: any = orderId ? await Order.findOne({ _id: orderId, deleted: false }) : null;
 
   if(!orderDetail) {
@@ -903,9 +918,17 @@ export const lookupDetail = async (req: Request, res: Response) => {
   });
 }
 
+export const lookupForgetPost = async (req: Request, res: Response) => {
+  forgetDeviceOrders(res);
+  res.json({
+    code: "success",
+    message: "Đã xóa danh sách đơn hàng khỏi thiết bị này!"
+  });
+}
+
 export const lookupCancelPatch = async (req: Request, res: Response) => {
   try {
-    const orderId = getLookupOrderId(req);
+    const orderId = resolveLookupOrderId(req);
     const orderDetail: any = orderId ? await Order.findOne({ _id: orderId, deleted: false }) : null;
 
     if(!orderDetail) {
