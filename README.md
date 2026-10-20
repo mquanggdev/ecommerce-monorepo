@@ -94,6 +94,7 @@ các tương tác động (giỏ hàng, phí ship, chat...) dùng `fetch` và So
 - **Đặt hàng:** sổ địa chỉ chọn trên bản đồ, **phí ship thật** từ nhiều hãng (GoShip), mã giảm giá,
   **điểm tích lũy** (trừ vào đơn, cộng sau khi thanh toán), thanh toán COD / **VNPay** / **ZaloPay**, xuất **hóa đơn PDF**.
   Thanh toán online không hoàn tất thì đơn **tự chuyển sang thanh toán khi nhận hàng** (có hỏi lại cổng trước khi chuyển).
+- **Mua không cần tài khoản:** khách vãng lai đặt hàng (chỉ thanh toán khi nhận hàng), **tra cứu và tự hủy đơn** bằng mã đơn + số điện thoại; có giới hạn chống đơn ảo.
 - **Tài khoản:** đăng ký/đăng nhập, Google/Facebook OAuth, quên mật khẩu bằng OTP qua email,
   theo dõi đơn, **tự hủy đơn** đang chờ xác nhận (popup xác nhận, chọn lý do), đánh giá sản phẩm kèm ảnh (chỉ với đơn đã giao thành công).
 - **Chat trực tuyến** với nhân viên: gửi file/ảnh, trạng thái "đang nhập", đánh giá cuộc chat.
@@ -292,6 +293,21 @@ khách trả xong rồi đóng tab thì web không biết; chuyển nhầm đơn
   (đã thử 3 yêu cầu hủy đồng thời: 1 thành công, kho/điểm chỉ trả một lần).
 
 📍 `helpers/payment-query.helper.ts`, `helpers/order-cancel.helper.ts`, `jobs/payment.job.ts`, `controllers/client/order.controller.ts`
+
+### 3.11. Khách vãng lai: mua không cần tài khoản mà không mở đường cho đơn ảo
+
+**Vấn đề.** Khách chưa đăng nhập vào được trang thanh toán nhưng bấm đặt hàng thì server lỗi 500 (đọc `id` của tài khoản không tồn tại).
+Cho mua không cần tài khoản thì phải giải quyết: khách xem/hủy đơn bằng gì, chống đặt đơn ảo giữ kho, và tiền của người không có tài khoản.
+
+**Giải quyết.**
+- Khách vãng lai **chỉ thanh toán khi nhận hàng** (ẩn VNPay/ZaloPay, server cũng chặn): hệ thống chưa có hoàn tiền,
+  nên không giữ tiền của người khó đối soát; đổi lại rủi ro "bom hàng" giảm bằng bước admin xác nhận đơn + nhãn "Khách vãng lai".
+- **Tra cứu bằng mã đơn + số điện thoại** gửi qua POST; đúng thì đặt cookie JWT 30 phút chứa id đơn — số điện thoại không nằm trên URL,
+  API hủy đọc cookie chứ không nhận lại mã/số. Thông báo sai không nói rõ sai phần nào; 10 lần tra cứu / 15 phút / IP.
+- **Tự hủy** dùng lại hàm hủy dùng chung (lệnh cập nhật có điều kiện, hoàn kho/trả mã đúng một lần), chỉ đổi điều kiện chủ đơn.
+- **Chống đơn ảo:** 5 lần đặt / 15 phút / IP (bỏ qua khách đã đăng nhập) và tối đa 3 đơn chờ / số điện thoại — kiểm tra trước bước trừ kho.
+
+📍 `controllers/client/order.controller.ts` (`lookup*`, `createPost`), `middlewares/rate-limit.middleware.ts`, `helpers/order-cancel.helper.ts`
 
 ---
 

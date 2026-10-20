@@ -72,12 +72,13 @@ export const cancelShipment = async (order: any): Promise<void> => {
 }
 
 // Khách tự hủy: chỉ đơn của chính khách, đang "Chờ xác nhận" và chưa thanh toán.
+// owner xác định chủ đơn: { userId } với khách có tài khoản, { userId: "" } với khách vãng lai (id đơn lấy từ cookie tra cứu).
 // Lệnh cập nhật có điều kiện: nếu admin vừa xác nhận hoặc đơn vừa được thanh toán thì không khớp, không ghi đè.
-export const cancelOrderByUser = async (orderId: string, userId: string, reason: string): Promise<any> => {
+export const cancelOrderByUser = async (orderId: string, owner: { userId: string }, reason: string): Promise<any> => {
   const cancelled: any = await Order.findOneAndUpdate(
     {
       _id: orderId,
-      userId: userId,
+      userId: owner.userId,
       deleted: false,
       orderStatus: "pending",
       paymentStatus: "unpaid"

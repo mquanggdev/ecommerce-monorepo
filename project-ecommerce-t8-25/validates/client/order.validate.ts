@@ -104,3 +104,37 @@ export const createPost = (req: Request, res: Response, next: NextFunction) => {
 
   next();
 }
+
+export const lookupPost = (req: Request, res: Response, next: NextFunction) => {
+  const schema = Joi.object({
+    code: Joi.string()
+      .trim()
+      .max(20)
+      .required()
+      .messages({
+        "string.empty": "Vui lòng nhập mã đơn hàng!",
+        "any.required": "Vui lòng nhập mã đơn hàng!",
+        "string.max": "Mã đơn hàng không hợp lệ!",
+      }),
+    phone: Joi.string()
+      .trim()
+      .pattern(/^0\d{9}$/)
+      .required()
+      .messages({
+        "string.empty": "Vui lòng nhập số điện thoại!",
+        "any.required": "Vui lòng nhập số điện thoại!",
+        "string.pattern.base": "Số điện thoại không đúng định dạng!",
+      }),
+  });
+
+  const { error } = schema.validate(req.body);
+  if(error) {
+    res.json({
+      code: "error",
+      message: error.details[0].message
+    });
+    return;
+  }
+
+  next();
+}

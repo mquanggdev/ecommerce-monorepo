@@ -12960,3 +12960,18 @@ button:disabled {
   outline-offset: 4px;
   border-radius: 4px;
 }
+
+/* Khách vãng lai: gợi ý đăng nhập ở trang thanh toán, lời dẫn trang tra cứu đơn */
+.checkout_guest_note,
+.order_lookup_intro {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--paraColor);
+  margin: 6px 0 16px;
+}
+
+.checkout_guest_note a,
+.checkout_payment_note a {
+  color: var(--themeColoeOne);
+  text-decoration: underline;
+}

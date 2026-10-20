@@ -17,12 +17,44 @@ import AccountUser from '../../models/account-user.model';
 import { getApiPayment, getApiShipping, getGeneral } from '../../configs/setting.config';
 import { decreaseStock, findVariantIndex, increaseStock } from '../../helpers/stock.helper';
 import { PAYMENT_LINK_MINUTES, resolveUnpaidOnlineOrder } from '../../helpers/payment-query.helper';
+import jwt from 'jsonwebtoken';
+import { cancelOrderByUser, cancelReasonList } from '../../helpers/order-cancel.helper';
+
+// Số đơn vãng lai đang chờ xác nhận tối đa cho một số điện thoại
+const MAX_PENDING_GUEST_ORDERS = 3;
 
 export const createPost = async (req: Request, res: Response) => {
   const dataFinal: any = {};
 
-  // Thêm userId
-  dataFinal.userId = res.locals.accountUser.id || "";
+  // Thêm userId (khách vãng lai không có tài khoản: userId rỗng)
+  const isGuest = !res.locals.accountUser;
+  dataFinal.userId = res.locals.accountUser?.id || "";
+
+  if(isGuest) {
+    // Khách vãng lai chỉ thanh toán khi nhận hàng: chưa có hoàn tiền cho người không có tài khoản
+    if(req.body.paymentMethod !== "money") {
+      res.json({
+        code: "error",
+        message: "Vui lòng đăng nhập để thanh toán qua VNPay/ZaloPay!"
+      });
+      return;
+    }
+
+    // Chống đơn ảo giữ kho: mỗi số điện thoại tối đa 3 đơn vãng lai đang chờ xác nhận
+    const pendingGuestOrders = await Order.countDocuments({
+      userId: "",
+      phone: req.body.phone,
+      orderStatus: "pending",
+      deleted: false
+    });
+    if(pendingGuestOrders >= MAX_PENDING_GUEST_ORDERS) {
+      res.json({
+        code: "error",
+        message: `Số điện thoại này đang có ${MAX_PENDING_GUEST_ORDERS} đơn chờ xác nhận. Vui lòng chờ shop xác nhận hoặc hủy bớt đơn!`
+      });
+      return;
+    }
+  }
 
   // Thêm code
   let code = "";
@@ -421,7 +453,9 @@ export const success = async (req: Request, res: Response) => {
     // Đơn online chưa thanh toán đã được chuyển sang thanh toán khi nhận hàng
     switchedToCOD: !!orderAfter.paymentSwitch?.from && orderAfter.paymentStatus === "unpaid",
     // Đơn online chưa có kết quả thanh toán (cổng chưa báo về)
-    waitingPayment: isOnline && orderAfter.paymentStatus === "unpaid"
+    waitingPayment: isOnline && orderAfter.paymentStatus === "unpaid",
+    // Khách vãng lai: theo dõi đơn qua trang tra cứu
+    isGuest: !orderAfter.userId
   });
 }
 
@@ -794,4 +828,140 @@ function sortObject(obj: any) {
     sorted[str[i]] = encodeURIComponent(obj[decodedKey]).replace(/%20/g, "+");
   }
   return sorted;
+}
+
+// ===== Tra cứu đơn hàng bằng mã đơn + số điện thoại (khách vãng lai) =====
+// Tra cứu đúng thì đặt cookie ngắn hạn chứa id đơn; trang chi tiết và API hủy đọc cookie này,
+// nên số điện thoại không nằm trên đường dẫn và không phải gửi lại.
+const LOOKUP_COOKIE = "orderLookup";
+const LOOKUP_MINUTES = 30;
+
+// Id đơn từ cookie tra cứu, hoặc null nếu không có / hết hạn / bị sửa
+const getLookupOrderId = (req: Request): string | null => {
+  try {
+    const decoded = jwt.verify(`${req.cookies[LOOKUP_COOKIE]}`, `${process.env.JWT_SECRET}`) as jwt.JwtPayload;
+    return decoded.purpose === "order-lookup" ? `${decoded.orderId}` : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export const lookup = async (req: Request, res: Response) => {
+  res.render("client/pages/order-lookup", {
+    pageTitle: "Tra cứu đơn hàng"
+  });
+}
+
+export const lookupPost = async (req: Request, res: Response) => {
+  const orderDetail = await Order.findOne({
+    code: `${req.body.code}`.trim().toUpperCase(),
+    phone: `${req.body.phone}`.trim(),
+    deleted: false
+  }).select("_id");
+
+  // Không nói rõ sai mã hay sai số điện thoại để không dò được
+  if(!orderDetail) {
+    res.json({
+      code: "error",
+      message: "Không tìm thấy đơn hàng, vui lòng kiểm tra lại mã đơn và số điện thoại!"
+    });
+    return;
+  }
+
+  const token = jwt.sign(
+    { orderId: orderDetail.id, purpose: "order-lookup" },
+    `${process.env.JWT_SECRET}`,
+    { expiresIn: `${LOOKUP_MINUTES}m` }
+  );
+  res.cookie(LOOKUP_COOKIE, token, {
+    httpOnly: true,
+    maxAge: LOOKUP_MINUTES * 60 * 1000,
+    sameSite: "strict"
+  });
+
+  res.json({
+    code: "success",
+    message: "Đã tìm thấy đơn hàng!"
+  });
+}
+
+export const lookupDetail = async (req: Request, res: Response) => {
+  const orderId = getLookupOrderId(req);
+  const orderDetail: any = orderId ? await Order.findOne({ _id: orderId, deleted: false }) : null;
+
+  if(!orderDetail) {
+    res.redirect("/order/lookup");
+    return;
+  }
+
+  res.render("client/pages/order-lookup-detail", {
+    pageTitle: `Đơn hàng ${orderDetail.code}`,
+    orderDetail: orderDetail,
+    // Đơn của khách có tài khoản: chỉ xem, muốn hủy phải đăng nhập
+    isGuestOrder: !orderDetail.userId,
+    cancelReasonList: cancelReasonList
+  });
+}
+
+export const lookupCancelPatch = async (req: Request, res: Response) => {
+  try {
+    const orderId = getLookupOrderId(req);
+    const orderDetail: any = orderId ? await Order.findOne({ _id: orderId, deleted: false }) : null;
+
+    if(!orderDetail) {
+      res.json({
+        code: "error",
+        message: "Phiên tra cứu đã hết hạn, vui lòng tra cứu lại đơn hàng!"
+      });
+      return;
+    }
+
+    if(orderDetail.userId) {
+      res.json({
+        code: "error",
+        message: "Đơn hàng thuộc tài khoản của bạn, vui lòng đăng nhập để hủy đơn!"
+      });
+      return;
+    }
+
+    if(orderDetail.orderStatus === "cancelled") {
+      res.json({
+        code: "error",
+        message: "Đơn hàng đã được hủy trước đó!"
+      });
+      return;
+    }
+
+    if(orderDetail.orderStatus !== "pending" || orderDetail.paymentStatus !== "unpaid") {
+      res.json({
+        code: "error",
+        message: "Đơn hàng đã được shop xác nhận, vui lòng liên hệ shop để hủy!"
+      });
+      return;
+    }
+
+    const note = `${req.body.note || ""}`.trim();
+    const reason = note ? `${req.body.reason}: ${note}` : `${req.body.reason}`;
+
+    // Đơn vãng lai luôn là thanh toán khi nhận hàng nên không cần hỏi lại cổng thanh toán
+    const cancelled = await cancelOrderByUser(orderId as string, { userId: "" }, reason);
+    if(!cancelled) {
+      res.json({
+        code: "error",
+        message: "Trạng thái đơn hàng vừa thay đổi, vui lòng tải lại trang!"
+      });
+      return;
+    }
+
+    res.json({
+      code: "success",
+      message: `Đã hủy đơn hàng ${cancelled.code}!`
+    });
+  } catch (error) {
+    console.error(error);
+    res.json({
+      code: "error",
+      message: "Không hủy được đơn hàng, vui lòng thử lại!"
+    });
+  }
 }

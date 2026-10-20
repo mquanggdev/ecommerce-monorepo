@@ -14,12 +14,14 @@ mixin payment-method-name(order)
       |  (chuyển từ #{order.paymentSwitch.from == "vnpay" ? "VNPay" : "ZaloPay"} do chưa thanh toán)
 
 //- Nút hủy: chỉ đơn "Chờ xác nhận" và chưa thanh toán
-mixin order-cancel-button(order, className)
+//- cancelUrl: API hủy (mặc định là API trong tài khoản; trang tra cứu đơn dùng API riêng)
+mixin order-cancel-button(order, className, cancelUrl)
   if order.orderStatus == "pending" && order.paymentStatus == "unpaid"
     button(
       type="button"
       class=`order_cancel_btn ${className || ""}`
       button-cancel-order=order.id
+      data-cancel-url=(cancelUrl || `/dashboard/order/cancel/${order.id}`)
       data-code=order.code
       ) Hủy đơn hàng
 

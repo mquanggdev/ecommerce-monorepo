@@ -17,3 +17,6 @@ div(class="checkout_header")
       | Tài khoản:
       b #{accountUser.fullName}
       a(href="/auth/logout") (Đăng xuất)
+  else
+    p(class="checkout_guest_note")
+      | Bạn đang mua với tư cách khách. #[a(href="/auth/login") Đăng nhập] để tích điểm và theo dõi đơn dễ hơn.

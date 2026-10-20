@@ -2827,6 +2827,32 @@ if(buttonOrder) {
 }
 // End Button Order
 
+// Tra cứu đơn hàng bằng mã đơn + số điện thoại (khách vãng lai)
+const formOrderLookup = document.querySelector("[form-order-lookup]");
+if(formOrderLookup) {
+  formOrderLookup.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const dataFinal = {
+      code: formOrderLookup.code.value.trim(),
+      phone: formOrderLookup.phone.value.trim()
+    };
+    if(!dataFinal.code || !dataFinal.phone) {
+      notyf.error("Vui lòng nhập mã đơn hàng và số điện thoại!");
+      return;
+    }
+    sendWithButton(getSubmitButton(formOrderLookup), `/order/lookup`, jsonOptions("POST", dataFinal), data => {
+      if(data.code == "error") {
+        notyf.error(data.message);
+        return;
+      }
+      // Kết quả tra cứu được giữ trong cookie, trang chi tiết đọc từ đó (số điện thoại không nằm trên đường dẫn)
+      window.location.href = "/order/lookup/detail";
+      return true;
+    }, "Đang tra cứu...");
+  });
+}
+// Hết Tra cứu đơn hàng
+
 // Hủy đơn hàng: nút mở popup xác nhận, chọn lý do rồi gửi
 const modalCancelOrder = document.querySelector("#modalCancelOrder");
 if(modalCancelOrder) {
@@ -2834,11 +2860,11 @@ if(modalCancelOrder) {
   const buttonSubmit = modalCancelOrder.querySelector("[button-submit-cancel]");
   const boxError = modalCancelOrder.querySelector("[cancel-order-error]");
   const modal = bootstrap.Modal.getOrCreateInstance(modalCancelOrder);
-  let orderId = "";
+  let cancelUrl = "";
 
   document.querySelectorAll("[button-cancel-order]").forEach(button => {
     button.addEventListener("click", () => {
-      orderId = button.getAttribute("button-cancel-order");
+      cancelUrl = button.getAttribute("data-cancel-url");
       modalCancelOrder.querySelector("[cancel-order-code]").textContent = button.getAttribute("data-code");
       formCancel.reset();
       boxError.innerHTML = "";
@@ -2865,7 +2891,7 @@ if(modalCancelOrder) {
       note: formCancel.note.value.trim()
     };
 
-    sendWithButton(buttonSubmit, `/dashboard/order/cancel/${orderId}`, jsonOptions("PATCH", dataFinal), data => {
+    sendWithButton(buttonSubmit, cancelUrl, jsonOptions("PATCH", dataFinal), data => {
       if(data.code == "error") {
         boxError.innerHTML = htmlError(data.message);
         boxError.querySelector("[button-retry]")?.remove();

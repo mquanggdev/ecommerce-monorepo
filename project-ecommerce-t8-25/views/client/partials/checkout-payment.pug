@@ -8,22 +8,27 @@ div(class="checkout_payment")
       checked
       )
     label.form-check-label(for="paymentMethodMoney") Thanh toán khi nhận hàng
-  .form-check
-    input#paymentMethodVNPay.form-check-input(
-      name="paymentMethod" 
-      type="radio"
-      value="vnpay"
-      )
-    label.form-check-label(for="paymentMethodVNPay") Thanh toán qua VNPay
-  .form-check
-    input#paymentMethodZaloPay.form-check-input(
-      name="paymentMethod" 
-      type="radio"
-      value="zalopay"
-      )
-    label.form-check-label(for="paymentMethodZaloPay") Thanh toán qua ZaloPay
-  p(class="checkout_payment_note")
-    | Thanh toán qua VNPay/ZaloPay chưa hoàn tất thì đơn hàng sẽ tự chuyển sang thanh toán khi nhận hàng.
+  //- Khách vãng lai chỉ thanh toán khi nhận hàng (chưa có hoàn tiền cho người không có tài khoản); server cũng chặn
+  if !accountUser
+    p(class="checkout_payment_note")
+      | #[a(href="/auth/login") Đăng nhập] để thanh toán qua VNPay/ZaloPay và tích điểm.
+  else
+    .form-check
+      input#paymentMethodVNPay.form-check-input(
+        name="paymentMethod" 
+        type="radio"
+        value="vnpay"
+        )
+      label.form-check-label(for="paymentMethodVNPay") Thanh toán qua VNPay
+    .form-check
+      input#paymentMethodZaloPay.form-check-input(
+        name="paymentMethod" 
+        type="radio"
+        value="zalopay"
+        )
+      label.form-check-label(for="paymentMethodZaloPay") Thanh toán qua ZaloPay
+    p(class="checkout_payment_note")
+      | Thanh toán qua VNPay/ZaloPay chưa hoàn tất thì đơn hàng sẽ tự chuyển sang thanh toán khi nhận hàng.
   button(
     class="common_btn" 
     type="submit"

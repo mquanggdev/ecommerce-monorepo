@@ -42,6 +42,8 @@ block main
                       b #{item.code}
                     td
                       div #{item.fullName}
+                        if !item.userId
+                          span.badge.bg-warning.text-dark.ms-1 Khách vãng lai
                       small.text-muted #{item.phone}
                     td
                       b.text-danger #{item.total.toLocaleString('vi-VN')} đ
