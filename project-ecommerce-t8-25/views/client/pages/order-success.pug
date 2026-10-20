@@ -18,6 +18,11 @@ block main
             h3 Đặt hàng thành công!
             p
               | Cảm ơn bạn đã mua hàng! Mã đơn hàng của bạn là <b>#{orderCode}</b>
+            if isGuest
+              div(class="order_notice")
+                i.far.fa-bookmark
+                div
+                  | Hãy lưu lại mã đơn <b>#{orderCode}</b>. Bạn có thể xem hoặc hủy đơn ở trang <a href="/order/lookup">Tra cứu đơn hàng</a> bằng mã đơn và số điện thoại đặt hàng.
             if switchedToCOD
               div(class="order_notice")
                 i.far.fa-info-circle
@@ -34,11 +39,12 @@ block main
                 class="common_btn go_btn" 
                 href="/"
                 ) Về trang chủ
+              //- Khách vãng lai không có trang "Đơn hàng của tôi": theo dõi qua trang tra cứu
               a(
                 class="common_btn" 
-                href="/dashboard/order/list"
+                href=(isGuest ? "/order/lookup" : "/dashboard/order/list")
                 )
-                | Theo dõi đơn hàng
+                | #{isGuest ? "Tra cứu đơn hàng" : "Theo dõi đơn hàng"}
                 i.fas.fa-long-arrow-right
               a(
                 class="common_btn go_btn" 

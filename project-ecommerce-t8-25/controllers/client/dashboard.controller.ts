@@ -510,7 +510,7 @@ export const orderCancelPatch = async (req: Request, res: Response) => {
     const note = `${req.body.note || ""}`.trim();
     const reason = note ? `${req.body.reason}: ${note}` : `${req.body.reason}`;
 
-    const cancelled = await cancelOrderByUser(orderId, userId, reason);
+    const cancelled = await cancelOrderByUser(orderId, { userId: userId }, reason);
     if(!cancelled) {
       // Trạng thái vừa thay đổi giữa lúc kiểm tra và lúc hủy (admin xác nhận, cổng báo thanh toán...)
       res.json({

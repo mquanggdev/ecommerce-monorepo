@@ -1,0 +1,43 @@
+extends ../layouts/default.pug
+include ../mixins/page-banner.pug
+include ../mixins/order-cancel.pug
+include ../mixins/order-invoice.pug
+
+block main
+  +page-banner(
+    {
+      name: pageTitle,
+    },
+    "/order/lookup/detail"
+  )
+
+  //- Chi tiết đơn tra cứu bằng mã đơn + số điện thoại; đơn vãng lai tự hủy được, đơn có tài khoản chỉ xem
+  section.dashboard(class="mb_100")
+    .container
+      .row.justify-content-center
+        .col-xl-9
+          div(class="dashboard_content mt_100")
+            h3(class="dashboard_title")
+              | #{pageTitle}
+              a(
+                href="/order/lookup"
+                class="back_btn common_btn"
+                ) Tra cứu đơn khác
+            div(class="dashboard_order_invoice_area")
+              +order-invoice(orderDetail)
+                div(class="dashboard_invoice_footer")
+                  h4 Ghi chú
+                  div #{orderDetail.note}
+                  if !isGuestOrder
+                    p(class="order_contact_note")
+                      | Đơn hàng thuộc tài khoản của bạn. #[a(href="/auth/login") Đăng nhập] để quản lý và hủy đơn.
+                  .order_detail_actions
+                    a(
+                      href=`/order/export-pdf?orderCode=${orderDetail.code}&phone=${orderDetail.phone}`
+                      class="common_btn"
+                      ) In hóa đơn
+                    if isGuestOrder
+                      +order-cancel-button(orderDetail, "common_btn", "/order/lookup/cancel")
+
+  if isGuestOrder
+    +order-cancel-modal(cancelReasonList)

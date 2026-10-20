@@ -18,6 +18,8 @@ block main
             .mb-3
               label.form-label Họ tên
               input.form-control(disabled value=orderDetail.fullName)
+              if !orderDetail.userId
+                small.text-warning.d-block.mt-1 Khách vãng lai (không có tài khoản) — nên gọi xác nhận trước khi giao.
           .col-md-6
             .mb-3
               label.form-label Số điện thoại

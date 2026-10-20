@@ -1,0 +1,50 @@
+extends ../layouts/default.pug
+include ../mixins/page-banner.pug
+
+block main
+  +page-banner(
+    {
+      name: pageTitle,
+    },
+    "/order/lookup"
+  )
+
+  //- Tra cứu đơn bằng mã đơn + số điện thoại (dành cho khách mua không đăng nhập)
+  section(class="sign_in mt_100 mb_100")
+    .container
+      .row.justify-content-center
+        .col-xxl-5.col-lg-7.col-xl-6.col-md-10
+          div(class="sign_in_form")
+            h3 #{pageTitle}
+            p(class="order_lookup_intro")
+              | Nhập mã đơn hàng và số điện thoại đã dùng khi đặt hàng. Mã đơn có trên trang "Đặt hàng thành công" và hóa đơn.
+            form(form-order-lookup)
+              .row
+                .col-xl-12
+                  div(class="single_input")
+                    label(for="lookupCode") Mã đơn hàng
+                    input(
+                      id="lookupCode"
+                      name="code"
+                      type="text"
+                      placeholder="Ví dụ: AB123456"
+                      maxlength="20"
+                      autocomplete="off"
+                      )
+                .col-xl-12
+                  div(class="single_input")
+                    label(for="lookupPhone") Số điện thoại
+                    input(
+                      id="lookupPhone"
+                      name="phone"
+                      type="tel"
+                      placeholder="Ví dụ: 0912345678"
+                      maxlength="10"
+                      )
+                .col-xl-12
+                  button(class="common_btn" type="submit")
+                    | Tra cứu
+                    i.fas.fa-long-arrow-right
+            p(class="dont_account")
+              | Bạn có tài khoản? 
+              a(href="/dashboard/order/list") Xem đơn trong tài khoản
